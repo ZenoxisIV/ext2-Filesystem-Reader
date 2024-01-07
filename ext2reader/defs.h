@@ -5,11 +5,12 @@
     Rohan Solas (2021-07292)
 */
 
+// File contains important definitions, structs, and prototypes
+
 // TODO:
 //  - Superblock Struct
 //  - Inode Struct
 //  - BGD Struct ?
 
-int main() {
-    return 0;   
-}
+void EnumeratePaths();
+void ExtractFile();
