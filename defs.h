@@ -8,8 +8,8 @@ typedef struct {
 	__u32 total_unallocated_blocks;
 	__u32 total_unallocated_inodes;
 	__u32 superblock_block_num;
-	__u32 block_size; // shift by 1024 to the left (2^k)
-	__u32 fragment_size; // shift by 1024 to left (2^k)
+	__u32 block_size; // (not actual block size) block size is computed as 1024 shifted to the left by block_size bits
+	__u32 fragment_size;
 	__u32 total_blocks_in_blockgroup;
 	__u32 total_fragments_in_blockgroup;
 	__u32 total_inodes_in_blockgroup;
