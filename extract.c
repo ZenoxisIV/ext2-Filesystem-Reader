@@ -31,7 +31,7 @@ int main() {
         close(fd);
         exit(EXIT_FAILURE);
     }
-    
+
     read(fd, &sb, sizeof(superblock));
 
     /*
@@ -55,8 +55,8 @@ int main() {
     printf("Number of blocks per block group: %d\n", sb.total_blocks_in_blockgroup);
     printf("Number of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
 
-    // Seek to the Block Group Descriptor Table position (skip 1024 bytes) 
-    blk_groupdesc_tbl bgdt;
+    // Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block) 
+    blk_groupdesc_tbl bgd;
 
     if (lseek(fd, block_size, SEEK_SET) == -1) {
         perror("Error: Seeking to BGDT failed");
@@ -64,12 +64,12 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    read(fd, &bgdt, sizeof(blk_groupdesc_tbl));
+    read(fd, &bgd, sizeof(blk_groupdesc_tbl));
 
-    printf("Block bitmap: %d\n", bgdt.block_bitmap);
-    printf("inode bitmap %d\n", bgdt.inode_bitmap);
-    printf("inode table: %d\n", bgdt.inode_table);
-    printf("unalloc blocks: %d\n", bgdt.total_unallocated_blocks);
+    printf("Block bitmap: %d\n", bgd.block_bitmap);
+    printf("inode bitmap: %d\n", bgd.inode_bitmap);
+    printf("inode table: %d\n", bgd.inode_table);
+    printf("unalloc blocks: %d\n", bgd.total_unallocated_blocks);
 
     close(fd);
 
