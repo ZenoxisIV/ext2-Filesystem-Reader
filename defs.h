@@ -1,7 +1,11 @@
 #include <linux/types.h>
 
-// Reference: https://wiki.osdev.org/Ext2: Base Superblock Fields
-typedef struct {
+#define SUPERBLOCK_OFFSET 1024
+#define FD_DEV "/dev/loop20" // replace with the appropriate device
+#define EXT2_MAGIC_NUMBER 0xEF53
+
+// Reference: https://wiki.osdev.org/Ext2 Base Superblock Fields
+typedef struct superblock {
 	__u32 total_inodes;
 	__u32 total_blocks;
 	__u32 blocks_reserved_for_superuser;
@@ -29,3 +33,14 @@ typedef struct {
 	__u16 group_id;
 	__u8 unused[940];
 } superblock;
+
+// Block Group Descriptor Table
+typedef struct blk_groupdesc_tbl {
+	__u32 block_bitmap;
+	__u32 inode_bitmap;
+	__u32 inode_table;
+	__u16 total_unallocated_blocks;
+	__u16 total_unallocated_inodes;
+	__u16 total_dirs;
+	__u8 unused[14];
+} blk_groupdesc_tbl;

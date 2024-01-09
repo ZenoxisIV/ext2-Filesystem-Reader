@@ -18,19 +18,18 @@ int main() {
     */
 
     superblock sb;
-    char dev[] = "/dev/loop20"; // replace with the appropriate device
 
-    int fd = open(dev, O_RDONLY);
+    int fd = open(FD_DEV, O_RDONLY);
     if (fd == -1) {
-        perror("Error: Opening block device failed");
-        return -1;
+        perror("Error: Opening device failed");
+        exit(EXIT_FAILURE);
     }
 
     // Seek to the superblock position (skip 1024 bytes)
-    if (lseek(fd, 1024, SEEK_SET) == -1) {
+    if (lseek(fd, SUPERBLOCK_OFFSET, SEEK_SET) == -1) {
         perror("Error: Seeking to superblock failed");
         close(fd);
-        return -1;
+        exit(EXIT_FAILURE);
     }
     
     read(fd, &sb, sizeof(superblock));
@@ -43,12 +42,34 @@ int main() {
         • Block number containing the starting address (of a copy) of the BGDT
     */
 
-    printf("ext2 Magic Number: %x\n", sb.ext2_sig); // ext2 Signature (must be 0xEF53)
+    if (sb.ext2_sig != EXT2_MAGIC_NUMBER) {
+        perror("Error: Unrecognized filesystem");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
 
     __u32 block_size = 1024 << sb.block_size;
     printf("Block Size: %d\n", block_size); // Block size
     printf("Number of blocks per block group: %d\n", sb.total_blocks_in_blockgroup);
     printf("Number of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
+
+
+    //! FOLLOWING SECTION NOT YET WORKING
+    // Seek to the Block Group Descriptor Table position (skip 1024 bytes) 
+    blk_groupdesc_tbl bgdt;
+
+    if (lseek(fd, SUPERBLOCK_OFFSET + block_size, SEEK_SET) == -1) {
+        perror("Error: Seeking to BGDT failed");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
+    read(fd, &bgdt, sizeof(blk_groupdesc_tbl));
+
+    printf("Block bitmap: %d\n", bgdt.block_bitmap);
+    printf("inode bitmap %d\n", bgdt.inode_bitmap);
+    printf("inode table: %d\n", bgdt.inode_table);
+    printf("unalloc blocks: %d\n", bgdt.total_unallocated_blocks);
 
     close(fd);
 
