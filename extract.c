@@ -48,17 +48,17 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    __u32 block_size = 1024 << sb.block_size;
+    printf("Superblock Number: %d\n", sb.superblock_block_num);
+
+    __u32 block_size = 1024 << sb.lg_block_size;
     printf("Block Size: %d\n", block_size); // Block size
     printf("Number of blocks per block group: %d\n", sb.total_blocks_in_blockgroup);
     printf("Number of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
 
-
-    //! FOLLOWING SECTION NOT YET WORKING
     // Seek to the Block Group Descriptor Table position (skip 1024 bytes) 
     blk_groupdesc_tbl bgdt;
 
-    if (lseek(fd, SUPERBLOCK_OFFSET + block_size, SEEK_SET) == -1) {
+    if (lseek(fd, block_size, SEEK_SET) == -1) {
         perror("Error: Seeking to BGDT failed");
         close(fd);
         exit(EXIT_FAILURE);
