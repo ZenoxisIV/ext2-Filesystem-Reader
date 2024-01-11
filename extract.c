@@ -106,7 +106,7 @@ int main() {
     
 
     //! WARNING: Beyond this point are experimental attempts.
-    // Issue: Can traverse but string manipulation for printing is wonky
+    // Issue: need to determine when to put "/" at the end
     // For now, traversal is limited to the first direct block
     char path[4096] = "/";
     traverseAllPaths(rootinode, fd, sb, block_size, path);
