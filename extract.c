@@ -12,7 +12,7 @@
 #define MAX_PATH_SIZE 4096
 
 inode readInode(int, int, superblock, int);
-void traverseAllPaths(inode, int, superblock, int, char**);
+void traverseAllPaths(inode, int, superblock, int, char*);
 
 
 int main() {
@@ -108,11 +108,8 @@ int main() {
     //! WARNING: Beyond this point are experimental attempts.
     // Issue: Can traverse but string manipulation for printing is wonky
     // For now, traversal is limited to the first direct block
-    char* path = malloc(4096);
-    char* root = "/";
-    strncpy(path, root, 4096);
-
-    traverseAllPaths(rootinode, fd, sb, block_size, &path);
+    char path[4096] = "/";
+    traverseAllPaths(rootinode, fd, sb, block_size, path);
 
     close(fd);
 
@@ -175,9 +172,9 @@ inode readInode(int inodeNum, int fd, superblock sb, int block_size) {
     */
 }
 
-void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, char* path[]) {
-    printf("%s\n", *path);
-
+void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, char path[]) {
+    printf("%s\n", path);
+    
     dir_entry directory_entry;
 
     int bytesParsed = 0;
@@ -202,27 +199,17 @@ void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, ch
         }
 
         __u16 fileobject = currInode.type_and_perm & 0xF000; // extract type
-        //printf("%x\n", currInode.type_and_perm);
-        //printf("%x\n", fileobject);
-        sleep(1);
 
-        
         switch (fileobject) {
             case DIRECTORY:
                 inode nextInode = readInode(directory_entry.inode_num, fd, sb, block_size);
-                char* newPath = malloc(4096);
-                char* temp = directory_entry.name;
-                strncpy(newPath, *path, 4096);
-                strncat(newPath, temp, 4096);
-
-                //strcat(newPath, directory_entry.name);
-                traverseAllPaths(nextInode, fd, sb, block_size, &newPath);
-                strncat(newPath, "\0", 4096);
-                free(newPath);
-                newPath = NULL;
-
+                char newPath[4096];
+                strncpy(newPath, path, 4096);
+                strncat(newPath, directory_entry.name, directory_entry.name_size);
+                traverseAllPaths(nextInode, fd, sb, block_size, newPath);
                 break;
             case FILE:
+                bytesParsed = block_size; // override; break from while loop
                 break;
             default:
                 printf("Warning: Unknown entity found");
