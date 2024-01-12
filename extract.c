@@ -8,14 +8,14 @@
 
 #define DIRECTORY 0x4000
 #define FILE 0x8000
-
 #define MAX_PATH_SIZE 4096
+#define NDIRECT 12
 
 
 superblock readSuperblock(int);
 void readBGD(int, blk_groupdesc*, int, int);
 inode readInode(int, int, superblock, int);
-dir_entry readDirectory(int, __u32, int, int);
+dir_entry readDirEntry(int, __u32, int, int);
 __u16 extractObjectType(inode);
 void traverseAllPaths(inode, int, superblock, int, char*);
 
@@ -37,14 +37,14 @@ int main() {
 
     int fd = open(FD_DEV, O_RDONLY);
     if (fd == -1) {
-        perror("Error: Opening device failed");
+        perror("Error: Opening device failed\n");
         exit(EXIT_FAILURE);
     }
 
     sb = readSuperblock(fd);
 
     if (sb.ext2_sig != EXT2_MAGIC_NUMBER) {
-        perror("Error: Unrecognized filesystem");
+        perror("Error: Unrecognized filesystem\n");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -103,7 +103,7 @@ superblock readSuperblock(int fd) {
     // ===== Seek to the superblock position (skip 1024 bytes)
     //printf("-----SUPERBLOCK INFO-----\n");
     if (lseek(fd, SUPERBLOCK_OFFSET, SEEK_SET) == -1) {
-        perror("Error: Seeking to superblock failed");
+        perror("Error: Seeking to superblock failed\n");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -114,7 +114,7 @@ superblock readSuperblock(int fd) {
 
 void readBGD(int fd, blk_groupdesc* bgdt, int bgdOffset, int block_size) {
     if (lseek(fd, block_size + (bgdOffset * 32), SEEK_SET) == -1) {
-        perror("Error: Seeking to BGDT failed");
+        perror("Error: Seeking to BGDT failed\n");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -140,7 +140,7 @@ inode readInode(int inodeNum, int fd, superblock sb, int block_size) {
     //printf("-----INODE %d INFO-----\n", inodeNum);
 
     if (lseek(fd, block_size * 4 + (inodeIndex * sb.inode_size), SEEK_SET) == -1) {
-        perror("Error: Seeking to inode table failed");
+        perror("Error: Seeking to inode table failed\n");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -158,11 +158,11 @@ inode readInode(int inodeNum, int fd, superblock sb, int block_size) {
     return currInode;
 }
 
-dir_entry readDirectory(int fd, __u32 dp, int block_size, int bytesParsed) {
+dir_entry readDirEntry(int fd, __u32 dp, int blockSize, int bytesParsed) {
     dir_entry entry;
 
-    if (lseek(fd, block_size * dp + bytesParsed, SEEK_SET) == -1) {
-        perror("Error: Seeking to data block failed");
+    if (lseek(fd, blockSize * dp + bytesParsed, SEEK_SET) == -1) {
+        perror("Error: Seeking to data block failed\n");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -175,19 +175,33 @@ dir_entry readDirectory(int fd, __u32 dp, int block_size, int bytesParsed) {
     return entry;
 }
 
-__u16 extractObjectType(inode currInode) {
-    return currInode.type_and_perm & 0xF000; // extract type
+__u32 readIndirectBlock(int fd, __u32 blockPointer, int blockSize, int blockOffset) {
+    __u32 retPointer;
+
+    if (lseek(fd, blockSize * blockPointer + blockOffset, SEEK_SET) == -1) {
+        perror("Error: Seeking to indirect block failed\n");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
+    read(fd, &retPointer, sizeof(__u32));
+
+    return retPointer;
 }
 
-void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, char path[]) {
-    printf("%s\n", path);
-    
+__u16 extractObjectType(inode currInode) {
+    return currInode.type_and_perm & 0xF000; // Extract type
+}
+
+void parseBlock(__u32 blockPointer, int fd, superblock sb, int block_size, char path[], void (*traverseFunc)(inode, int, superblock, int, char*)){
+    // "Directory entries are also not allowed to span multiple blocks" https://wiki.osdev.org/Ext2#Directory_Entry 
+
     dir_entry directory_entry;
 
     int bytesParsed = 0;
     while (bytesParsed < block_size) {
 
-        directory_entry = readDirectory(fd, currInode.dp[0], block_size, bytesParsed);
+        directory_entry = readDirEntry(fd, blockPointer, block_size, bytesParsed);
 
         //printf("    inode number: %d\n", directory_entry.inode_num);
         //printf("    Directory entry size: %d\n", directory_entry.size);
@@ -209,17 +223,81 @@ void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, ch
         switch (objType) {
             case DIRECTORY:
                 strncat(newPath, "/", 2);
-                traverseAllPaths(nextInode, fd, sb, block_size, newPath);
+                traverseFunc(nextInode, fd, sb, block_size, newPath);
                 break;
             case FILE:
                 printf("%s\n", newPath);
                 break;
             default:
-                printf("Warning: Unknown entity found");
+                // printf("Warning: Unknown entity found\n");
                 break;
         }
 
         bytesParsed += directory_entry.size;
+    }
+}
+
+void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, char path[]) {
+    printf("%s\n", path);
+
+    // === Direct
+    for (int i = 0; i < NDIRECT; i++){
+        if (currInode.dp[i] == 0) continue; // Don't even bother with null pointers
+
+        parseBlock(currInode.dp[i], fd, sb, block_size, path, traverseAllPaths);
+    }
+
+    __u32 nindirect = block_size / sizeof(__u32);
+
+    // === Single Indirect
+    if (currInode.sip != 0) {
+        for (int j = 0; j < nindirect; j++){
+            __u32 directPointer = readIndirectBlock(fd, currInode.sip, block_size, j*4); // DP points to block with more directory entries
+
+            if (directPointer == 0) continue; // Don't even bother with null pointers
+
+            parseBlock(directPointer, fd, sb, block_size, path, traverseAllPaths);
+        }
+    }
+
+    // === Double Indirect
+    if (currInode.dip != 0) {
+        for (int j = 0; j < nindirect; j++){
+            __u32 singleIP = readIndirectBlock(fd, currInode.dip, block_size, j*4); // IP points to block with more DPs
+
+            if (singleIP == 0) continue; // Don't even bother with null pointers
+
+            for (int k = 0; k < nindirect; k++){
+                __u32 directPointer = readIndirectBlock(fd, singleIP, block_size, k*4); // DP points to block with more dir entries
+
+                if (directPointer == 0) continue; // Don't even bother with null pointers
+
+                parseBlock(directPointer, fd, sb, block_size, path, traverseAllPaths);
+            }
+        }
+    }
+
+    // === Triple Indirect
+    if (currInode.tip != 0) {
+        for (int j = 0; j < nindirect; j++){
+            __u32 doubleIP = readIndirectBlock(fd, currInode.tip, block_size, j*4); // IP points to block with more IPs
+
+            if (doubleIP == 0) continue; // Don't even bother with null pointers
+
+            for (int k = 0; k < nindirect; k++){
+                __u32 singleIP = readIndirectBlock(fd, doubleIP, block_size, k*4); // IP points to block with even more IPs
+
+                if (singleIP == 0) continue; // Don't even bother with null pointers
+
+                for (int l = 0; l < nindirect; l++){
+                    __u32 directPointer = readIndirectBlock(fd, singleIP, block_size, l*4); // IP points to block with even more dir entries
+
+                    if (directPointer == 0) continue; // Don't even bother with null pointers
+
+                    parseBlock(directPointer, fd, sb, block_size, path, traverseAllPaths);
+                }
+            }
+        }
     }
 }
 
