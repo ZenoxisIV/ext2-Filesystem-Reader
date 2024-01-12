@@ -17,8 +17,9 @@ void readBGD(int, blk_groupdesc*, int, int);
 inode readInode(int, int, superblock, int);
 dir_entry readDirEntry(int, __u32, int, int);
 __u16 extractObjectType(inode);
+void parseBlock(__u32, int, superblock, int, char, void (*traverseFunc)(inode, int, superblock, int, char*));
+__u32 readIndirectBlock(int, __u32, int, int);
 void traverseAllPaths(inode, int, superblock, int, char*);
-
 
 /*
     EXT2 SUPERBLOCK PARSER
@@ -175,20 +176,6 @@ dir_entry readDirEntry(int fd, __u32 dp, int blockSize, int bytesParsed) {
     return entry;
 }
 
-__u32 readIndirectBlock(int fd, __u32 blockPointer, int blockSize, int blockOffset) {
-    __u32 retPointer;
-
-    if (lseek(fd, blockSize * blockPointer + blockOffset, SEEK_SET) == -1) {
-        perror("Error: Seeking to indirect block failed\n");
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
-
-    read(fd, &retPointer, sizeof(__u32));
-
-    return retPointer;
-}
-
 __u16 extractObjectType(inode currInode) {
     return currInode.type_and_perm & 0xF000; // Extract type
 }
@@ -235,6 +222,20 @@ void parseBlock(__u32 blockPointer, int fd, superblock sb, int block_size, char 
 
         bytesParsed += directory_entry.size;
     }
+}
+
+__u32 readIndirectBlock(int fd, __u32 blockPointer, int blockSize, int blockOffset) {
+    __u32 retPointer;
+
+    if (lseek(fd, blockSize * blockPointer + blockOffset, SEEK_SET) == -1) {
+        perror("Error: Seeking to indirect block failed\n");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
+    read(fd, &retPointer, sizeof(__u32));
+
+    return retPointer;
 }
 
 void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, char path[]) {
