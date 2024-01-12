@@ -1,36 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-
-#define MAX_PATH_LENGTH 4096
-
-void recreatePath(char*);
-
-int main() {
-    char path1[] = "/dir1/cs153.txt";
-    char path2[] = "/dir1/./././cs153.txt";
-    char path3[] = "/./dir1/cs153.txt";
-    char path4[] = "/../dir1/cs153.txt";
-    char path5[] = "/../../dir1/../dir1/./////cs153.txt";
-    char path6[] = "/dir2/directory name with spaces/../../dir1/cs153.txt";
-    
-    recreatePath(path1);
-    recreatePath(path2);
-    recreatePath(path3);
-    recreatePath(path4);
-    recreatePath(path5);
-    recreatePath(path6);
-
-    printf("%s\n", path1);
-    printf("%s\n", path2);
-    printf("%s\n", path3);
-    printf("%s\n", path4);
-    printf("%s\n", path5);
-    printf("%s\n", path6);
-    
-    return 0;
-}
+#include "defs.h"
 
 void recreatePath(char *path) {
     int len = strlen(path);

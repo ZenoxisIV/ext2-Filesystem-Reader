@@ -1,9 +1,21 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
 #include <linux/types.h>
 
-#define SUPERBLOCK_OFFSET 1024
 #define FD_DEV "/dev/loop20" // replace with the appropriate device
+
+#define SUPERBLOCK_OFFSET 1024
 #define EXT2_MAGIC_NUMBER 0xEF53
 
+#define DIRECTORY 0x4000
+#define FILE 0x8000
+#define NDIRECT 12
+#define MAX_PATH_LENGTH 4096
+
+// === Structs ===
+// extract.c
 // Reference: https://wiki.osdev.org/Ext2 Base Superblock Fields
 typedef struct superblock {
 	__u32 total_inodes;
@@ -76,3 +88,17 @@ typedef struct dir_entry {
 	__u8  ignored;
 	__u8  name[256]; // MAY NEED TO CHANGE
 } dir_entry;
+
+// === Function Signatures ===
+// extract.c
+superblock readSuperblock(int);
+void readBGD(int, blk_groupdesc*, int, int);
+inode readInode(int, int, superblock, int);
+dir_entry readDirEntry(int, __u32, int, int);
+__u16 extractObjectType(inode);
+void parseBlock(__u32, int, superblock, int, char*, void (*traverseFunc)(inode, int, superblock, int, char*));
+__u32 readIndirectBlock(int, __u32, int, int);
+void traverseAllPaths(inode, int, superblock, int, char*);
+
+// input_parser.c
+void recreatePath(char*);
