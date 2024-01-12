@@ -8,7 +8,7 @@
 
 #define DIRECTORY 0x4000
 #define FILE 0x8000
-#define MAX_PATH_SIZE 4096
+#define MAX_PATH_LENGTH 4096
 #define NDIRECT 12
 
 
@@ -89,7 +89,7 @@ int main() {
     
     //! WARNING: Beyond this point are experimental attempts.
     // For now, traversal is limited to the first direct block
-    char path[4096] = "/";
+    char path[MAX_PATH_LENGTH] = "/";
     traverseAllPaths(rootinode, fd, sb, block_size, path);
 
     free(bgdt);
@@ -203,8 +203,8 @@ void parseBlock(__u32 blockPointer, int fd, superblock sb, int blockSize, char p
         inode nextInode = readInode(directory_entry.inode_num, fd, sb, blockSize);
         __u16 objType = extractObjectType(nextInode);
 
-        char newPath[4096];
-        strncpy(newPath, path, 4096);
+        char newPath[MAX_PATH_LENGTH];
+        strncpy(newPath, path, MAX_PATH_LENGTH);
         strncat(newPath, directory_entry.name, directory_entry.name_size);
 
         switch (objType) {
