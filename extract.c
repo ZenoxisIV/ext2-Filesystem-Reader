@@ -15,6 +15,8 @@
 superblock readSuperblock(int);
 void readBGD(int, blk_groupdesc*, int, int);
 inode readInode(int, int, superblock, int);
+dir_entry readDirectory(int, __u32, int, int);
+__u16 extractObjectType(inode);
 void traverseAllPaths(inode, int, superblock, int, char*);
 
 
@@ -47,12 +49,13 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    printf("    Superblock Number: %d\n", sb.superblock_block_num);
+    //printf("    Superblock Number: %d\n", sb.superblock_block_num);
 
     __u32 block_size = 1024 << sb.lg_block_size;
     __u32 partition_size = sb.total_blocks * block_size;
     __u32 total_block_groups = ceil(sb.total_blocks / sb.total_blocks_in_blockgroup + 1);
 
+    /*
     printf("    Partition size: %d\n", partition_size);
     printf("    Total # of blocks: %d\n", sb.total_blocks);
     printf("    Total # of block groups: %d\n", total_block_groups);
@@ -63,18 +66,21 @@ int main() {
     printf("    inode size: %d\n", sb.inode_size);
     printf("    # of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
     printf("    # of inode blocks per block group: %d\n", (sb.total_inodes_in_blockgroup / (block_size / sb.inode_size)));
+    */
 
     // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
     int bgdOffset = 0;
-    printf("-----BGD ENTRY %d INFO-----\n", bgdOffset);
+    //printf("-----BGD ENTRY %d INFO-----\n", bgdOffset);
     blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
     readBGD(fd, bgdt, bgdOffset, block_size);
 
+    /*
     printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
     printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
     printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
     printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
     printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
+    */
 
     // ===== Find an inode
     inode rootinode;
@@ -95,7 +101,7 @@ int main() {
 superblock readSuperblock(int fd) {
     superblock sb;
     // ===== Seek to the superblock position (skip 1024 bytes)
-    printf("-----SUPERBLOCK INFO-----\n");
+    //printf("-----SUPERBLOCK INFO-----\n");
     if (lseek(fd, SUPERBLOCK_OFFSET, SEEK_SET) == -1) {
         perror("Error: Seeking to superblock failed");
         close(fd);
@@ -152,6 +158,27 @@ inode readInode(int inodeNum, int fd, superblock sb, int block_size) {
     return currInode;
 }
 
+dir_entry readDirectory(int fd, __u32 dp, int block_size, int bytesParsed) {
+    dir_entry entry;
+
+    if (lseek(fd, block_size * dp + bytesParsed, SEEK_SET) == -1) {
+        perror("Error: Seeking to data block failed");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // ===== Read data block(s) pointed to by the direct pointer(s)
+    // NOTE: Code below only for one direct pointer (from root inode which only has one pointer)
+    //printf("-----DATA BLOCK %d-----\n", inode.dp[0]);
+    read(fd, &entry, sizeof(dir_entry));
+
+    return entry;
+}
+
+__u16 extractObjectType(inode currInode) {
+    return currInode.type_and_perm & 0xF000; // extract type
+}
+
 void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, char path[]) {
     printf("%s\n", path);
     
@@ -160,16 +187,7 @@ void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, ch
     int bytesParsed = 0;
     while (bytesParsed < block_size) {
 
-        if (lseek(fd, block_size * currInode.dp[0] + bytesParsed, SEEK_SET) == -1) {
-            perror("Error: Seeking to data block failed");
-            close(fd);
-            exit(EXIT_FAILURE);
-        }
-
-        // ===== Read data block(s) pointed to by the direct pointer(s)
-        // NOTE: Code below only for one direct pointer (from root inode which only has one pointer)
-        //printf("-----DATA BLOCK %d-----\n", inode.dp[0]);
-        read(fd, &directory_entry, sizeof(dir_entry));
+        directory_entry = readDirectory(fd, currInode.dp[0], block_size, bytesParsed);
 
         //printf("    inode number: %d\n", directory_entry.inode_num);
         //printf("    Directory entry size: %d\n", directory_entry.size);
@@ -181,18 +199,20 @@ void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, ch
             continue; // Skip current and parent directory entries
         }
 
-        __u16 fileobject = currInode.type_and_perm & 0xF000; // extract type
+        inode nextInode = readInode(directory_entry.inode_num, fd, sb, block_size);
+        __u16 objType = extractObjectType(nextInode);
 
-        switch (fileobject) {
+        char newPath[4096];
+        strncpy(newPath, path, 4096);
+        strncat(newPath, directory_entry.name, directory_entry.name_size);
+
+        switch (objType) {
             case DIRECTORY:
-                inode nextInode = readInode(directory_entry.inode_num, fd, sb, block_size);
-                char newPath[4096];
-                strncpy(newPath, path, 4096);
-                strncat(newPath, directory_entry.name, directory_entry.name_size);
+                strncat(newPath, "/", 2);
                 traverseAllPaths(nextInode, fd, sb, block_size, newPath);
                 break;
             case FILE:
-                bytesParsed = block_size; // override; break from while loop
+                printf("%s\n", newPath);
                 break;
             default:
                 printf("Warning: Unknown entity found");
