@@ -1,7 +1,7 @@
 #include <linux/types.h>
 
 #define SUPERBLOCK_OFFSET 1024
-#define FD_DEV "/dev/loop18" // replace with the appropriate device
+#define FD_DEV "/dev/loop20" // replace with the appropriate device
 #define EXT2_MAGIC_NUMBER 0xEF53
 
 // Reference: https://wiki.osdev.org/Ext2 Base Superblock Fields

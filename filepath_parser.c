@@ -34,10 +34,8 @@ int main() {
 
 void recreatePath(char *path) {
     int len = strlen(path);
-    bool flag = false;
+    bool flag = path[len - 1] == '/';
     
-    if (path[len - 1] == '/') flag = true;
-
     char temp[MAX_PATH_LENGTH];
     int tempIdx = 0;
 
