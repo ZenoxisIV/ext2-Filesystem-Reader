@@ -16,14 +16,13 @@ superblock readSuperblock(int fd) {
 
 void readBGD(int fd, blk_groupdesc* bgdt, int bgdOffset, int blockSize) {
     if (lseek(fd, blockSize + (bgdOffset * 32), SEEK_SET) == -1) {
-        perror("[Error] Seeking to BGDT failed\n");
+        perror("[Error] Seeking to BGDT failed");
         close(fd);
         exit(EXIT_FAILURE);
     }
 
     read(fd, &bgdt[bgdOffset], sizeof(blk_groupdesc));
 }
-
 
 inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
     // ===== Find an inode
@@ -129,7 +128,7 @@ __u32 readIndirectBlock(int fd, __u32 blockPointer, int blockSize, int blockOffs
     __u32 retPointer;
 
     if (lseek(fd, blockSize * blockPointer + blockOffset, SEEK_SET) == -1) {
-        perror("[Error] Seeking to indirect block failed\n");
+        perror("[Error] Seeking to indirect block failed");
         close(fd);
         exit(EXIT_FAILURE);
     }

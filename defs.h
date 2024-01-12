@@ -4,8 +4,6 @@
 #include <string.h>
 #include <linux/types.h>
 
-#define FD_DEV "/dev/loop20" // replace with the appropriate device
-
 #define SUPERBLOCK_OFFSET 1024
 #define EXT2_MAGIC_NUMBER 0xEF53
 
