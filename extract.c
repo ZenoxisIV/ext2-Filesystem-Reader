@@ -1,3 +1,5 @@
+#include <fcntl.h>
+#include <unistd.h>
 #include "defs.h"
 
 superblock readSuperblock(int fd) {
@@ -29,9 +31,9 @@ inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
     inode currInode;
     //printf("-----INODE %d LOCATION-----\n", inodeNum);
 
-    int blockGroup = (inodeNum - 1) / sb.total_inodes_in_blockgroup;
+    //int blockGroup = (inodeNum - 1) / sb.total_inodes_in_blockgroup;
     int inodeIndex = (inodeNum - 1) % sb.total_inodes_in_blockgroup;
-    int containingBlock = (inodeIndex * sb.inode_size) / blockSize;
+    //int containingBlock = (inodeIndex * sb.inode_size) / blockSize;
 
     //printf("    Block group: %d\n", blockGroup);
     //printf("    Index: %d\n", inodeIndex);
@@ -90,12 +92,14 @@ void parseBlock(__u32 blockPointer, int fd, superblock sb, int blockSize, char p
 
         directory_entry = readDirEntry(fd, blockPointer, blockSize, bytesParsed);
 
+        const char* dirName = (char*) directory_entry.name;
+
         //printf("    inode number: %d\n", directory_entry.inode_num);
         //printf("    Directory entry size: %d\n", directory_entry.size);
         //printf("    Name size: %d\n", directory_entry.name_size);
         //printf("    Directory entry name: %s\n", directory_entry.name);
 
-        if (strcmp(directory_entry.name, ".") == 0 || strcmp(directory_entry.name, "..") == 0) {
+        if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0) {
             bytesParsed += directory_entry.size;
             continue; // Skip current and parent directory entries
         }
@@ -105,7 +109,7 @@ void parseBlock(__u32 blockPointer, int fd, superblock sb, int blockSize, char p
 
         char newPath[MAX_PATH_LENGTH];
         strncpy(newPath, path, MAX_PATH_LENGTH);
-        strncat(newPath, directory_entry.name, directory_entry.name_size);
+        strncat(newPath, dirName, directory_entry.name_size);
 
         switch (objType) {
             case DIRECTORY:

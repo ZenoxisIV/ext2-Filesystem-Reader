@@ -17,8 +17,6 @@
 
 int main(int argc, char* argv[]) {
     if (argv[2] == NULL) {
-        recreatePath(argv[1]);
-
         superblock sb;
 
         int fd = open(argv[1], O_RDONLY);
@@ -38,7 +36,7 @@ int main(int argc, char* argv[]) {
         //printf("    Superblock Number: %d\n", sb.superblock_block_num);
 
         __u32 block_size = 1024 << sb.lg_block_size;
-        __u32 partition_size = sb.total_blocks * block_size;
+        //__u32 partition_size = sb.total_blocks * block_size;
         __u32 total_block_groups = ceil(sb.total_blocks / sb.total_blocks_in_blockgroup + 1);
 
         /*
