@@ -37,14 +37,14 @@ int main() {
 
     int fd = open(FD_DEV, O_RDONLY);
     if (fd == -1) {
-        perror("Error: Opening device failed");
+        perror("[Error] Opening device failed");
         exit(EXIT_FAILURE);
     }
 
     sb = readSuperblock(fd);
 
     if (sb.ext2_sig != EXT2_MAGIC_NUMBER) {
-        perror("Error: Unrecognized filesystem");
+        perror("[Error] Unrecognized filesystem");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -103,7 +103,7 @@ superblock readSuperblock(int fd) {
     // ===== Seek to the superblock position (skip 1024 bytes)
     //printf("-----SUPERBLOCK INFO-----\n");
     if (lseek(fd, SUPERBLOCK_OFFSET, SEEK_SET) == -1) {
-        perror("Error: Seeking to superblock failed");
+        perror("[Error] Seeking to superblock failed");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -114,7 +114,7 @@ superblock readSuperblock(int fd) {
 
 void readBGD(int fd, blk_groupdesc* bgdt, int bgdOffset, int block_size) {
     if (lseek(fd, block_size + (bgdOffset * 32), SEEK_SET) == -1) {
-        perror("Error: Seeking to BGDT failed");
+        perror("[Error] Seeking to BGDT failed");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -140,7 +140,7 @@ inode readInode(int inodeNum, int fd, superblock sb, int block_size) {
     //printf("-----INODE %d INFO-----\n", inodeNum);
 
     if (lseek(fd, block_size * 4 + (inodeIndex * sb.inode_size), SEEK_SET) == -1) {
-        perror("Error: Seeking to inode table failed");
+        perror("[Error] Seeking to inode table failed");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -162,7 +162,7 @@ dir_entry readDirectory(int fd, __u32 dp, int block_size, int bytesParsed) {
     dir_entry entry;
 
     if (lseek(fd, block_size * dp + bytesParsed, SEEK_SET) == -1) {
-        perror("Error: Seeking to data block failed");
+        perror("[Error] Seeking to data block failed");
         close(fd);
         exit(EXIT_FAILURE);
     }
@@ -215,7 +215,7 @@ void traverseAllPaths(inode currInode, int fd, superblock sb, int block_size, ch
                 printf("%s\n", newPath);
                 break;
             default:
-                printf("Warning: Unknown entity found");
+                printf("Warning: Unknown object found");
                 break;
         }
 
