@@ -4,19 +4,20 @@
 # 	Diego Montenejo (2020-05984)
 # 	Rohan Solas (2021-07292)
 
-# Very basic Makefile. May be improved once i get the hang of it.
+# A very basic Makefile.
 
-SRC_DIR := ext2reader
+CC = gcc
+CFLAGS = -Wall -g
 
-OBJS := main.o extract.o enum.o
+SRCS = extract.c filepath_parser.c
+OBJS = $(SRCS:.c=.o)
+EXEC = ext2op
 
-ext2: $(OBJS)
-	gcc $^ -o $@
+$(EXEC): $(OBJS)
+	$(CC) $(CFLAGS) -o $(EXEC) $(OBJS)
 
-%.o: $(SRC_DIR)/%.c $(SRC_DIR)/defs.h
-	@gcc -c $<
-
-.PHONY: clean
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	@rm -f *.o ext2
+	rm -f $(OBJS) $(EXEC)
