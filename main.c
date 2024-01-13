@@ -51,37 +51,38 @@ int main(int argc, char* argv[]) {
 
    blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
     switch (argc) {
-    case 1:
-        // **OP 1: PATH ENUMERATION       (No additional arguments)
-        // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
-        for (int bgdOffset = 0; bgdOffset < total_block_groups; bgdOffset++) {
-            //printf("-----BGD ENTRY %d INFO-----\n", bgdOffset);
-            readBGD(fd, bgdt, bgdOffset, block_size);
+        case 2:
+            // **OP 1: PATH ENUMERATION       (No additional arguments)
+            // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
+            for (int bgdOffset = 0; bgdOffset < total_block_groups; bgdOffset++) {
+                //printf("-----BGD ENTRY %d INFO-----\n", bgdOffset);
+                readBGD(fd, bgdt, bgdOffset, block_size);
 
-            /*
-            printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
-            printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
-            printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
-            printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
-            printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
-            */
+                /*
+                printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
+                printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
+                printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
+                printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
+                printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
+                */
 
-            // ===== Find an inode
-            inode rootinode;
-            rootinode = readInode(2, fd, sb, block_size); // read root inode
-            
-            char path[MAX_PATH_LENGTH] = "/";
-            traverseAllPaths(rootinode, fd, sb, block_size, path);  
-        }
-        // --------------------------------------------------
-        break;
-    case 2:
-        // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
-        // --------------------------------------------------
-        break;
-    default:
-        printf("Too few/many arguments supplied.\nCommand only supports 1 or 2 argument/s.\n");
-        break;
+                // ===== Find an inode
+                inode rootinode;
+                rootinode = readInode(2, fd, sb, block_size); // read root inode
+                
+                char path[MAX_PATH_LENGTH] = "/";
+                traverseAllPaths(rootinode, fd, sb, block_size, path);  
+            }
+            // --------------------------------------------------
+            break;
+        case 3:
+            // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
+            printf("test\n");
+            // --------------------------------------------------
+            break;
+        default:
+            printf("Too many arguments supplied.");
+            break;
     }
 
     /*
