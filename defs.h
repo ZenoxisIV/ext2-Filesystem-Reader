@@ -97,7 +97,7 @@ typedef struct dir_entry {
 } dir_entry;
 
 // === Function Signatures ===
-// extract.c
+// read.c
 superblock readSuperblock(int);
 void readBGD(int, blk_groupdesc*, int, int);
 inode readInode(int, int, superblock, int);
@@ -107,5 +107,8 @@ void parseBlock(__u32, int, superblock, int, char*, void (*traverseFunc)(inode, 
 __u32 readIndirectBlock(int, __u32, int, int);
 void traverseAllPaths(inode, int, superblock, int, char*);
 
-// input_parser.c
+// pathParser.c
 void recreatePath(char*);
+
+// error.c
+bool isAbsolutePath(char*);

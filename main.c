@@ -1,3 +1,10 @@
+/*
+    CS140 2324A PROJECT 2 - EXT2 FILESYSTEM READER
+    Ivan Cassidy Cadiang (2021-12575)
+    Diego Montenejo (2020-05984)
+    Rohan Solas (2021-07292)
+*/
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <math.h>
@@ -50,7 +57,7 @@ int main(int argc, char* argv[]) {
     */
 
    blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
-    switch (argc) {
+   switch (argc) {
         case 2:
             // **OP 1: PATH ENUMERATION       (No additional arguments)
             // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
@@ -76,7 +83,14 @@ int main(int argc, char* argv[]) {
             // --------------------------------------------------
             break;
         case 3:
+            if (!isAbsolutePath(argv[2])) {
+                fprintf(stderr, "INVALID PATH");
+                close(fd);
+                free(bgdt);
+                return -1;
+            }
             // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
+            recreatePath(argv[2]); // clean path for easier search
             printf("test\n");
             // --------------------------------------------------
             break;

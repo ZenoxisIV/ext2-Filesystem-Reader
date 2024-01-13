@@ -9,7 +9,7 @@
 CC = gcc
 CFLAGS = -Wall -g
 
-SRCS = main.c enum.c read.c pathParser.c
+SRCS = main.c enum.c read.c pathParser.c error.c
 OBJS = $(SRCS:.c=.o)
 EXEC = ext2op
 
