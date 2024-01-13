@@ -1,3 +1,12 @@
+/*
+    CS140 2324A PROJECT 2 - EXT2 FILESYSTEM READER
+    Ivan Cassidy Cadiang (2021-12575)
+    Diego Montenejo (2020-05984)
+    Rohan Solas (2021-07292)
+*/
+
+// File contains function for path enumeration
+
 #include "defs.h"
 
 void traverseAllPaths(inode currInode, int fd, superblock sb, int blockSize, char path[]) {

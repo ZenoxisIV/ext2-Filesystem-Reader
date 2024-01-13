@@ -50,8 +50,9 @@ int main(int argc, char* argv[]) {
     */
 
    blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
-
-    if (argv[2] == NULL) {
+    switch (argc) {
+    case 1:
+        // **OP 1: PATH ENUMERATION       (No additional arguments)
         // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
         for (int bgdOffset = 0; bgdOffset < total_block_groups; bgdOffset++) {
             //printf("-----BGD ENTRY %d INFO-----\n", bgdOffset);
@@ -70,20 +71,18 @@ int main(int argc, char* argv[]) {
             rootinode = readInode(2, fd, sb, block_size); // read root inode
             
             char path[MAX_PATH_LENGTH] = "/";
-            traverseAllPaths(rootinode, fd, sb, block_size, path);
-
-            
+            traverseAllPaths(rootinode, fd, sb, block_size, path);  
         }
-
-        close(fd);
-        free(bgdt);
-        return 0;
+        // --------------------------------------------------
+        break;
+    case 2:
+        // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
+        // --------------------------------------------------
+        break;
+    default:
+        printf("Too few/many arguments supplied.\nCommand only supports 1 or 2 argument/s.\n");
+        break;
     }
-
-    
-
-
-    
 
     /*
     char path1[] = "/dir1/cs153.txt";
