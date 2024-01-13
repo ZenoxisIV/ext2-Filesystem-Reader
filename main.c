@@ -16,43 +16,42 @@
 */
 
 int main(int argc, char* argv[]) {
+    int fd = open(argv[1], O_RDONLY);
+    if (fd == -1) {
+        perror("[Error] Opening device failed");
+        exit(EXIT_FAILURE);
+    }
+
+    superblock sb = readSuperblock(fd);
+
+    if (sb.ext2_sig != EXT2_MAGIC_NUMBER) {
+        perror("[Error] Unrecognized filesystem");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
+    //printf("    Superblock Number: %d\n", sb.superblock_block_num);
+
+    __u32 block_size = 1024 << sb.lg_block_size;
+    //__u32 partition_size = sb.total_blocks * block_size;
+    __u32 total_block_groups = ceil(sb.total_blocks / sb.total_blocks_in_blockgroup + 1);
+
+    /*
+    printf("    Partition size: %d\n", partition_size);
+    printf("    Total # of blocks: %d\n", sb.total_blocks);
+    printf("    Total # of block groups: %d\n", total_block_groups);
+    printf("    Total # of inodes: %d\n", sb.total_inodes);
+
+    printf("    Block size: %d\n", block_size);
+    printf("    # of blocks per block group: %d\n", sb.total_blocks_in_blockgroup); // FSR number is higher than total number of blocks
+    printf("    inode size: %d\n", sb.inode_size);
+    printf("    # of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
+    printf("    # of inode blocks per block group: %d\n", (sb.total_inodes_in_blockgroup / (block_size / sb.inode_size)));
+    */
+
+   blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
+
     if (argv[2] == NULL) {
-        superblock sb;
-
-        int fd = open(argv[1], O_RDONLY);
-        if (fd == -1) {
-            perror("[Error] Opening device failed");
-            exit(EXIT_FAILURE);
-        }
-
-        sb = readSuperblock(fd);
-
-        if (sb.ext2_sig != EXT2_MAGIC_NUMBER) {
-            perror("[Error] Unrecognized filesystem");
-            close(fd);
-            exit(EXIT_FAILURE);
-        }
-
-        //printf("    Superblock Number: %d\n", sb.superblock_block_num);
-
-        __u32 block_size = 1024 << sb.lg_block_size;
-        //__u32 partition_size = sb.total_blocks * block_size;
-        __u32 total_block_groups = ceil(sb.total_blocks / sb.total_blocks_in_blockgroup + 1);
-
-        /*
-        printf("    Partition size: %d\n", partition_size);
-        printf("    Total # of blocks: %d\n", sb.total_blocks);
-        printf("    Total # of block groups: %d\n", total_block_groups);
-        printf("    Total # of inodes: %d\n", sb.total_inodes);
-
-        printf("    Block size: %d\n", block_size);
-        printf("    # of blocks per block group: %d\n", sb.total_blocks_in_blockgroup); // FSR number is higher than total number of blocks
-        printf("    inode size: %d\n", sb.inode_size);
-        printf("    # of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
-        printf("    # of inode blocks per block group: %d\n", (sb.total_inodes_in_blockgroup / (block_size / sb.inode_size)));
-        */
-
-        blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
         // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
         for (int bgdOffset = 0; bgdOffset < total_block_groups; bgdOffset++) {
             //printf("-----BGD ENTRY %d INFO-----\n", bgdOffset);
@@ -73,11 +72,18 @@ int main(int argc, char* argv[]) {
             char path[MAX_PATH_LENGTH] = "/";
             traverseAllPaths(rootinode, fd, sb, block_size, path);
 
-            free(bgdt);
+            
         }
 
         close(fd);
+        free(bgdt);
+        return 0;
     }
+
+    
+
+
+    
 
     /*
     char path1[] = "/dir1/cs153.txt";
@@ -101,6 +107,7 @@ int main(int argc, char* argv[]) {
     printf("%s\n", path5);
     printf("%s\n", path6);
     */
-
+    close(fd);
+    free(bgdt);
     return 0;
 }
