@@ -52,30 +52,29 @@ int main(int argc, char* argv[]) {
         printf("    # of inode blocks per block group: %d\n", (sb.total_inodes_in_blockgroup / (block_size / sb.inode_size)));
         */
 
-        // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
-        int bgdOffset = 0;
-        //printf("-----BGD ENTRY %d INFO-----\n", bgdOffset);
         blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
-        readBGD(fd, bgdt, bgdOffset, block_size);
+        // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
+        for (int bgdOffset = 0; bgdOffset < total_block_groups; bgdOffset++) {
+            //printf("-----BGD ENTRY %d INFO-----\n", bgdOffset);
+            readBGD(fd, bgdt, bgdOffset, block_size);
 
-        /*
-        printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
-        printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
-        printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
-        printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
-        printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
-        */
+            /*
+            printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
+            printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
+            printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
+            printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
+            printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
+            */
 
-        // ===== Find an inode
-        inode rootinode;
-        rootinode = readInode(2, fd, sb, block_size); // read root inode
-        
-        //! WARNING: Beyond this point are experimental attempts.
-        // For now, traversal is limited to the first direct block
-        char path[MAX_PATH_LENGTH] = "/";
-        traverseAllPaths(rootinode, fd, sb, block_size, path);
+            // ===== Find an inode
+            inode rootinode;
+            rootinode = readInode(2, fd, sb, block_size); // read root inode
+            
+            char path[MAX_PATH_LENGTH] = "/";
+            traverseAllPaths(rootinode, fd, sb, block_size, path);
 
-        free(bgdt);
+            free(bgdt);
+        }
 
         close(fd);
     }
