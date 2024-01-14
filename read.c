@@ -91,6 +91,52 @@ __u16 extractObjectType(inode currInode) {
     return currInode.type_and_perm & 0xF000; // Extract type
 }
 
+void parseBlock(__u32 blockPointer, int fd, superblock sb, int blockSize, char path[], void (*traverseFunc)(inode, int, superblock, int, char*)){
+    // "Directory entries are also not allowed to span multiple blocks" https://wiki.osdev.org/Ext2#Directory_Entry 
+
+    dir_entry directory_entry;
+
+    int bytesParsed = 0;
+    while (bytesParsed < blockSize) {
+
+        directory_entry = readDirEntry(fd, blockPointer, blockSize, bytesParsed);
+
+        const char* dirName = (char*) directory_entry.name;
+
+        //printf("    inode number: %d\n", directory_entry.inode_num);
+        //printf("    Directory entry size: %d\n", directory_entry.size);
+        //printf("    Name size: %d\n", directory_entry.name_size);
+        //printf("    Directory entry name: %s\n", directory_entry.name);
+
+        if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0) {
+            bytesParsed += directory_entry.size;
+            continue; // Skip current and parent directory entries
+        }
+
+        inode nextInode = readInode(directory_entry.inode_num, fd, sb, blockSize);
+        __u16 objType = extractObjectType(nextInode);
+
+        char newPath[MAX_PATH_LENGTH];
+        strncpy(newPath, path, MAX_PATH_LENGTH);
+        strncat(newPath, dirName, directory_entry.name_size);
+
+        switch (objType) {
+            case DIRECTORY:
+                strncat(newPath, "/", 2);
+                traverseFunc(nextInode, fd, sb, blockSize, newPath);
+                break;
+            case FILE_:
+                printf("%s\n", newPath);
+                break;
+            default:
+                // printf("Warning: Unknown object found\n");
+                break;
+        }
+
+        bytesParsed += directory_entry.size;
+    }
+}
+
 __u32 readIndirectBlock(int fd, __u32 blockPointer, int blockSize, int blockOffset) {
     __u32 retPointer;
 

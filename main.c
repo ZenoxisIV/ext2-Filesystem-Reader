@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
             break;
         case 3:
             if (!isAbsolutePath(argv[2])) {
-                fprintf(stderr, "INVALID PAT\n");
+                fprintf(stderr, "INVALID PATH\n");
                 close(fd);
                 free(bgdt);
                 return -1;
@@ -107,21 +107,23 @@ int main(int argc, char* argv[]) {
 
             rootinode = readInode(2, fd, sb, block_size);
             int targetType;
+            dir_entry targetDir;
             
-            if ((targetType = searchForTarget(&rootinode, fd, sb, block_size, path)) == -1) {
+            if ((targetType = searchForTarget(&rootinode, &targetDir, fd, sb, block_size, path)) == -1) {
                 fprintf(stderr, "INVALID PATH\n");
                 close(fd);
                 free(bgdt);
                 return -1;
+
             } else if (targetType == 1) {
                 //* Target was found successfully and is a File
-                //! IMPORTANT: searchForTarget modifies the currInode argument passed to it
-
+                //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
+                extractSinglePath(rootinode, targetDir, fd, sb, block_size);
 
             } else if (targetType == 2) {
                 //* Target was found successfully and is a Directory
-                //! IMPORTANT: searchForTarget modifies the currInode argument passed to it
-
+                //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
+                extractAllPaths(rootinode, targetDir, fd, sb, block_size, path);
             }
             
             // --------------------------------------------------
@@ -130,29 +132,7 @@ int main(int argc, char* argv[]) {
             printf("Too many arguments supplied.");
             break;
     }
-
-    /*
-    char path1[] = "/dir1/cs153.txt";
-    char path2[] = "/dir1/./././cs153.txt";
-    char path3[] = "/./dir1/cs153.txt";
-    char path4[] = "/../dir1/cs153.txt";
-    char path5[] = "/../../dir1/../dir1/./////cs153.txt";
-    char path6[] = "/dir2/directory name with spaces/../../dir1/cs153.txt";
     
-    recreatePath(path1);
-    recreatePath(path2);
-    recreatePath(path3);
-    recreatePath(path4);
-    recreatePath(path5);
-    recreatePath(path6);
-
-    printf("%s\n", path1);
-    printf("%s\n", path2);
-    printf("%s\n", path3);
-    printf("%s\n", path4);
-    printf("%s\n", path5);
-    printf("%s\n", path6);
-    */
     close(fd);
     free(bgdt);
     return 0;

@@ -17,7 +17,7 @@
 #define EXT2_MAGIC_NUMBER 0xEF53
 
 #define DIRECTORY 0x4000
-#define FILE 0x8000
+#define FILE_ 0x8000
 #define NDIRECT 12
 #define MAX_PATH_LENGTH 4096
 
@@ -104,14 +104,17 @@ void readBGD(int, blk_groupdesc*, int, int);
 inode readInode(int, int, superblock, int);
 dir_entry readDirEntry(int, __u32, int, int);
 __u16 extractObjectType(inode);
-// void parseBlock(__u32, int, superblock, int, char*, void (*traverseFunc)(inode, int, superblock, int, char*));
+void parseBlock(__u32, int, superblock, int, char*, void (*traverseFunc)(inode, int, superblock, int, char*));
 __u32 readIndirectBlock(int, __u32, int, int);
 
 // enum.c
 void enumAllPaths(inode, int, superblock, int, char*);
 
 // extract.c
-int searchForTarget(inode*, int, superblock, int, char*); //! IMPORTANT: function modifies the currInode argument passed to it
+void extractSinglePath(inode, dir_entry, int, superblock, int);
+void extractAllPaths(inode, dir_entry, int, superblock, int, char*);
+int searchForTarget(inode*, dir_entry*, int, superblock, int, char*); //! IMPORTANT: function modifies the currInode argument passed to it
+
 
 // pathParser.c
 void recreatePath(char*);
