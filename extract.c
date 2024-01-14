@@ -5,8 +5,48 @@
     Rohan Solas (2021-07292)
 */
 #include <unistd.h>
-#include <stdio.h>
+#include <sys/stat.h>
 #include "defs.h"
+
+void parseBlock2_ext(__u32 blockPointer, int fd, superblock sb, int blockSize, char* buildPath){
+    // "Directory entries are also not allowed to span multiple blocks" https://wiki.osdev.org/Ext2#Directory_Entry 
+
+    dir_entry directory_entry;
+
+    int bytesParsed = 0;
+    while (bytesParsed < blockSize) {
+
+        directory_entry = readDirEntry(fd, blockPointer, blockSize, bytesParsed);
+
+        const char* dirName = (char*) directory_entry.name;
+        
+        if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0) {
+            bytesParsed += directory_entry.size;
+            continue; // Skip current and parent directory entries
+        }
+
+        inode nextInode = readInode(directory_entry.inode_num, fd, sb, blockSize);
+        __u16 objType = extractObjectType(nextInode);
+
+        // char newPath[MAX_PATH_LENGTH];
+        // strncpy(newPath, path, MAX_PATH_LENGTH);
+        // strncat(newPath, dirName, directory_entry.name_size);
+
+        switch (objType) {
+            case DIRECTORY:
+                // strncat(newPath, "/", 2);
+                extractAllPaths(nextInode, directory_entry, fd, sb, blockSize, buildPath, 0);
+                break;
+            case FILE_:
+                extractSinglePath(nextInode, directory_entry, fd, sb, blockSize, buildPath);
+                break;
+            default:
+                break;
+        }
+
+        bytesParsed += directory_entry.size;
+    }
+}
 
 void copyBlockToFile(int fd, __u32 dp, FILE** fp, int* buffer, int blockSize) {
     lseek(fd, blockSize * dp, SEEK_SET);
@@ -16,9 +56,15 @@ void copyBlockToFile(int fd, __u32 dp, FILE** fp, int* buffer, int blockSize) {
 }
 
 // File contains function for File Extraction
-void extractSinglePath(inode currInode, dir_entry targetDir, int fd, superblock sb, int blockSize) {
+void extractSinglePath(inode currInode, dir_entry targetDir, int fd, superblock sb, int blockSize, char* destPath) {
     int readBuffer[blockSize];
-    FILE* fp = fopen((char*)targetDir.name, "w");     // struct _iobuf = FILE, to avoid confusion with the def
+
+    char dest[MAX_PATH_LENGTH] = "";
+    strcpy(dest, destPath);
+    strcat(dest, (char*)targetDir.name);
+    printf("destination: %s\n", dest);
+
+    FILE* fp = fopen(dest, "w");
     
     // === Direct
     for (int i = 0; i < NDIRECT; i++){
@@ -83,14 +129,26 @@ void extractSinglePath(inode currInode, dir_entry targetDir, int fd, superblock 
     fclose(fp);
 }
 
-void extractAllPaths(inode currInode, dir_entry targetDir, int fd, superblock sb, int blockSize, char path[]) {
-    printf("%s\n", path);
+// Extracts all the subfiles/directories in a given directory
+void extractAllPaths(inode currInode, dir_entry targetDir, int fd, superblock sb, int blockSize, char* destPath, int isRoot) {
+    // printf("%s\n", srcPath);
+
+    char buildPath[MAX_PATH_LENGTH] = "output";
+
+    if (!isRoot) {
+        strcpy(buildPath, destPath);
+        strcat(buildPath, (char*)targetDir.name);
+    }
+
+    printf("buildpath: %s\n", buildPath);
+    mkdir(buildPath, 0777);
+    strcat(buildPath, "/");
 
     // === Direct
-    for (int i = 0; i < NDIRECT; i++){
+    for (int i = 0; i < NDIRECT; i++) {
         if (currInode.dp[i] == 0) continue; // Don't even bother with null pointers
 
-        parseBlock(currInode.dp[i], fd, sb, blockSize, path, enumAllPaths);
+        parseBlock2_ext(currInode.dp[i], fd, sb, blockSize, buildPath);   
     }
 
     __u32 nindirect = blockSize / sizeof(__u32);
@@ -102,7 +160,7 @@ void extractAllPaths(inode currInode, dir_entry targetDir, int fd, superblock sb
 
             if (directPointer == 0) continue; // Don't even bother with null pointers
 
-            parseBlock(directPointer, fd, sb, blockSize, path, enumAllPaths);
+            parseBlock2_ext(directPointer, fd, sb, blockSize, buildPath);
         }
     }
 
@@ -118,7 +176,7 @@ void extractAllPaths(inode currInode, dir_entry targetDir, int fd, superblock sb
 
                 if (directPointer == 0) continue; // Don't even bother with null pointers
 
-                parseBlock(directPointer, fd, sb, blockSize, path, enumAllPaths);
+                parseBlock2_ext(directPointer, fd, sb, blockSize, buildPath);
             }
         }
     }
@@ -140,7 +198,7 @@ void extractAllPaths(inode currInode, dir_entry targetDir, int fd, superblock sb
 
                     if (directPointer == 0) continue; // Don't even bother with null pointers
 
-                    parseBlock(directPointer, fd, sb, blockSize, path, enumAllPaths);
+                    parseBlock2_ext(directPointer, fd, sb, blockSize, buildPath);
                 }
             }
         }
@@ -149,7 +207,7 @@ void extractAllPaths(inode currInode, dir_entry targetDir, int fd, superblock sb
 
 
 // Checks the block pointer if the target directory or file is present within it
-//!     IMPORTANT: function modifies the currInode argument passed to it 
+//!     IMPORTANT: function modifies the currInode & targetDir argument passed to it 
 int checkBlock(inode* currInode, dir_entry* targetDir, __u32 blockPointer, int fd, superblock sb, int blockSize, char* target){
     // "Directory entries are also not allowed to span multiple blocks" https://wiki.osdev.org/Ext2#Directory_Entry 
     dir_entry directory_entry;
@@ -167,8 +225,8 @@ int checkBlock(inode* currInode, dir_entry* targetDir, __u32 blockPointer, int f
 
         // We found our target
         if (strcmp(dirName, target) == 0) {
-            // printf("FOUND THE TARGET %s\n", target);
             // If the target is found, update the current inode
+
             *currInode = readInode(directory_entry.inode_num, fd, sb, blockSize);
             *targetDir = directory_entry;
             return 1;
@@ -180,7 +238,7 @@ int checkBlock(inode* currInode, dir_entry* targetDir, __u32 blockPointer, int f
     return 0;
 }
 
-//!     IMPORTANT: function modifies the currInode argument passed to it
+//!     IMPORTANT: function modifies the currInode & targetDir argument passed to it
 int searchForTarget(inode* currInode, dir_entry* targetDir, int fd, superblock sb, int blockSize, char path[]) {
     int targetIsFile;
     

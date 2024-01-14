@@ -78,61 +78,61 @@ int main(int argc, char* argv[]) {
     inode rootinode;
 
     char path[MAX_PATH_LENGTH];
-
-    switch (argc) {
-        case 2:
-            // **OP 1: PATH ENUMERATION       (No additional arguments)
-            //! BGDT TRAVERSAL USED TO BE HERE.
-            // IF anything fails, try putting the BGDT traversal loop back here and then
-            //     put traverseAllPaths() inside the loop
-
-            // ===== Find an inode
-            rootinode = readInode(2, fd, sb, block_size); // read root inode
-            
-            strcpy(path, "/");
-            enumAllPaths(rootinode, fd, sb, block_size, path);  
-            // --------------------------------------------------
-            break;
-        case 3:
-            if (!isAbsolutePath(argv[2])) {
-                fprintf(stderr, "INVALID PATH\n");
-                close(fd);
-                free(bgdt);
-                return -1;
-            }
-
-            // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
-            recreatePath(argv[2]); // clean path for easier search
-            strcpy(path, argv[2]);
-
-            rootinode = readInode(2, fd, sb, block_size);
-            int targetType;
-            dir_entry targetDir;
-            
-            if ((targetType = searchForTarget(&rootinode, &targetDir, fd, sb, block_size, path)) == -1) {
-                fprintf(stderr, "INVALID PATH\n");
-                close(fd);
-                free(bgdt);
-                return -1;
-
-            } else if (targetType == 1) {
-                //* Target was found successfully and is a File
-                //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
-                extractSinglePath(rootinode, targetDir, fd, sb, block_size);
-
-            } else if (targetType == 2) {
-                //* Target was found successfully and is a Directory
-                //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
-                extractAllPaths(rootinode, targetDir, fd, sb, block_size, path);
-            }
-            
-            // --------------------------------------------------
-            break;
-        default:
-            printf("Too many arguments supplied.");
-            break;
-    }
     
+
+    if (argc == 2) {
+        // **OP 1: PATH ENUMERATION       (No additional arguments)
+        //! BGDT TRAVERSAL USED TO BE HERE.
+        // IF anything fails, try putting the BGDT traversal loop back here and then
+        //     put traverseAllPaths() inside the loop
+
+        // ===== Find an inode
+        rootinode = readInode(2, fd, sb, block_size); // read root inode
+        
+        strcpy(path, "/");
+        enumAllPaths(rootinode, fd, sb, block_size, path);  
+        // --------------------------------------------------
+    } else if (argc > 2) {
+        if (!isAbsolutePath(argv[2])) {
+            fprintf(stderr, "INVALID PATH\n");
+            close(fd);
+            free(bgdt);
+            return -1;
+        }
+
+        strcpy(path, argv[2]);
+
+        for (int i = 3; i < argc; i++) {
+            strcat(path, " ");
+            strcat(path, argv[i]);
+        }
+
+        // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
+        recreatePath(path); // clean path for easier search
+
+        rootinode = readInode(2, fd, sb, block_size);
+        int targetType;
+        dir_entry targetDir;
+        
+        if ((targetType = searchForTarget(&rootinode, &targetDir, fd, sb, block_size, path)) == -1) {
+            fprintf(stderr, "INVALID PATH\n");
+            close(fd);
+            free(bgdt);
+            return -1;
+
+        } else if (targetType == 1) {
+            //* Target was found successfully and is a File
+            //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
+            extractSinglePath(rootinode, targetDir, fd, sb, block_size, "");
+
+        } else if (targetType == 2) {
+            //* Target was found successfully and is a Directory
+            //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
+            extractAllPaths(rootinode, targetDir, fd, sb, block_size, "", 1);
+        }
+        // --------------------------------------------------
+    }
+
     close(fd);
     free(bgdt);
     return 0;
