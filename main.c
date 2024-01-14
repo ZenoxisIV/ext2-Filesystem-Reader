@@ -10,6 +10,11 @@
 #include <math.h>
 #include "defs.h"
 
+// Debug Lines. Set these to 1 depending on what you want to display
+#define SB_DBG      0   // Superblock
+#define BGDT_DBG    0   // Block Group Descriptor Table
+
+
 /*
     EXT2 SUPERBLOCK PARSER
     LITTLE ENDIAN SYSTEM
@@ -37,61 +42,88 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    //printf("    Superblock Number: %d\n", sb.superblock_block_num);
-
     __u32 block_size = 1024 << sb.lg_block_size;
-    //__u32 partition_size = sb.total_blocks * block_size;
     __u32 total_block_groups = ceil(sb.total_blocks / sb.total_blocks_in_blockgroup + 1);
 
-    /*
-    printf("    Partition size: %d\n", partition_size);
-    printf("    Total # of blocks: %d\n", sb.total_blocks);
-    printf("    Total # of block groups: %d\n", total_block_groups);
-    printf("    Total # of inodes: %d\n", sb.total_inodes);
+    if (SB_DBG) {
+        printf("    Superblock Number: %d\n", sb.superblock_block_num);
+        printf("    Partition size: %d\n", sb.total_blocks * block_size);
+        printf("    Total # of blocks: %d\n", sb.total_blocks);
+        printf("    Total # of block groups: %d\n", total_block_groups);
+        printf("    Total # of inodes: %d\n", sb.total_inodes);
 
-    printf("    Block size: %d\n", block_size);
-    printf("    # of blocks per block group: %d\n", sb.total_blocks_in_blockgroup); // FSR number is higher than total number of blocks
-    printf("    inode size: %d\n", sb.inode_size);
-    printf("    # of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
-    printf("    # of inode blocks per block group: %d\n", (sb.total_inodes_in_blockgroup / (block_size / sb.inode_size)));
-    */
+        printf("    Block size: %d\n", block_size);
+        printf("    # of blocks per block group: %d\n", sb.total_blocks_in_blockgroup); // FSR number is higher than total number of blocks
+        printf("    inode size: %d\n", sb.inode_size);
+        printf("    # of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
+        printf("    # of inode blocks per block group: %d\n", (sb.total_inodes_in_blockgroup / (block_size / sb.inode_size)));
+    }
 
-   blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
-   switch (argc) {
+
+    // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
+    //! Commented BGDT Iteration because it doesn't seem to be needed?
+    blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
+    for (int bgdOffset = 0; bgdOffset < total_block_groups; bgdOffset++) {
+        readBGD(fd, bgdt, bgdOffset, block_size);
+
+        if (!BGDT_DBG) continue;
+        printf("\n-----BGD ENTRY %d INFO-----\n", bgdOffset);
+        printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
+        printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
+        printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
+        printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
+        printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
+    }
+
+    inode rootinode;
+
+    char path[MAX_PATH_LENGTH];
+
+    switch (argc) {
         case 2:
             // **OP 1: PATH ENUMERATION       (No additional arguments)
-            // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
-            for (int bgdOffset = 0; bgdOffset < total_block_groups; bgdOffset++) {
-                //printf("-----BGD ENTRY %d INFO-----\n", bgdOffset);
-                readBGD(fd, bgdt, bgdOffset, block_size);
+            //! BGDT TRAVERSAL USED TO BE HERE.
+            // IF anything fails, try putting the BGDT traversal loop back here and then
+            //     put traverseAllPaths() inside the loop
 
-                /*
-                printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
-                printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
-                printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
-                printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
-                printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
-                */
-
-                // ===== Find an inode
-                inode rootinode;
-                rootinode = readInode(2, fd, sb, block_size); // read root inode
-                
-                char path[MAX_PATH_LENGTH] = "/";
-                traverseAllPaths(rootinode, fd, sb, block_size, path);  
-            }
+            // ===== Find an inode
+            rootinode = readInode(2, fd, sb, block_size); // read root inode
+            
+            strcpy(path, "/");
+            enumAllPaths(rootinode, fd, sb, block_size, path);  
             // --------------------------------------------------
             break;
         case 3:
             if (!isAbsolutePath(argv[2])) {
-                fprintf(stderr, "INVALID PATH");
+                fprintf(stderr, "INVALID PAT\n");
                 close(fd);
                 free(bgdt);
                 return -1;
             }
+
             // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
             recreatePath(argv[2]); // clean path for easier search
-            printf("test\n");
+            strcpy(path, argv[2]);
+
+            rootinode = readInode(2, fd, sb, block_size);
+            int targetType;
+            
+            if ((targetType = searchForTarget(&rootinode, fd, sb, block_size, path)) == -1) {
+                fprintf(stderr, "INVALID PATH\n");
+                close(fd);
+                free(bgdt);
+                return -1;
+            } else if (targetType == 1) {
+                //* Target was found successfully and is a File
+                //! IMPORTANT: searchForTarget modifies the currInode argument passed to it
+
+
+            } else if (targetType == 2) {
+                //* Target was found successfully and is a Directory
+                //! IMPORTANT: searchForTarget modifies the currInode argument passed to it
+
+            }
+            
             // --------------------------------------------------
             break;
         default:

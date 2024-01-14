@@ -9,26 +9,72 @@
 
 #include "defs.h"
 
-void traverseAllPaths(inode currInode, int fd, superblock sb, int blockSize, char path[]) {
+void parseBlock(__u32 blockPointer, int fd, superblock sb, int blockSize, char path[], void (*traverseFunc)(inode, int, superblock, int, char*)){
+    // "Directory entries are also not allowed to span multiple blocks" https://wiki.osdev.org/Ext2#Directory_Entry 
+
+    dir_entry directory_entry;
+
+    int bytesParsed = 0;
+    while (bytesParsed < blockSize) {
+
+        directory_entry = readDirEntry(fd, blockPointer, blockSize, bytesParsed);
+
+        const char* dirName = (char*) directory_entry.name;
+
+        //printf("    inode number: %d\n", directory_entry.inode_num);
+        //printf("    Directory entry size: %d\n", directory_entry.size);
+        //printf("    Name size: %d\n", directory_entry.name_size);
+        //printf("    Directory entry name: %s\n", directory_entry.name);
+
+        if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0) {
+            bytesParsed += directory_entry.size;
+            continue; // Skip current and parent directory entries
+        }
+
+        inode nextInode = readInode(directory_entry.inode_num, fd, sb, blockSize);
+        __u16 objType = extractObjectType(nextInode);
+
+        char newPath[MAX_PATH_LENGTH];
+        strncpy(newPath, path, MAX_PATH_LENGTH);
+        strncat(newPath, dirName, directory_entry.name_size);
+
+        switch (objType) {
+            case DIRECTORY:
+                strncat(newPath, "/", 2);
+                traverseFunc(nextInode, fd, sb, blockSize, newPath);
+                break;
+            case FILE:
+                printf("%s\n", newPath);
+                break;
+            default:
+                // printf("Warning: Unknown object found\n");
+                break;
+        }
+
+        bytesParsed += directory_entry.size;
+    }
+}
+
+void enumAllPaths(inode currInode, int fd, superblock sb, int blockSize, char path[]) {
     printf("%s\n", path);
 
     // === Direct
     for (int i = 0; i < NDIRECT; i++){
         if (currInode.dp[i] == 0) continue; // Don't even bother with null pointers
 
-        parseBlock(currInode.dp[i], fd, sb, blockSize, path, traverseAllPaths);
+        parseBlock(currInode.dp[i], fd, sb, blockSize, path, enumAllPaths);
     }
 
     __u32 nindirect = blockSize / sizeof(__u32);
 
     // === Single Indirect
-    if (currInode.sip != 0) {
+    if (currInode.sip != 0) { 
         for (int j = 0; j < nindirect; j++){
             __u32 directPointer = readIndirectBlock(fd, currInode.sip, blockSize, j*4); // DP points to block with more directory entries
 
             if (directPointer == 0) continue; // Don't even bother with null pointers
 
-            parseBlock(directPointer, fd, sb, blockSize, path, traverseAllPaths);
+            parseBlock(directPointer, fd, sb, blockSize, path, enumAllPaths);
         }
     }
 
@@ -44,7 +90,7 @@ void traverseAllPaths(inode currInode, int fd, superblock sb, int blockSize, cha
 
                 if (directPointer == 0) continue; // Don't even bother with null pointers
 
-                parseBlock(directPointer, fd, sb, blockSize, path, traverseAllPaths);
+                parseBlock(directPointer, fd, sb, blockSize, path, enumAllPaths);
             }
         }
     }
@@ -66,7 +112,7 @@ void traverseAllPaths(inode currInode, int fd, superblock sb, int blockSize, cha
 
                     if (directPointer == 0) continue; // Don't even bother with null pointers
 
-                    parseBlock(directPointer, fd, sb, blockSize, path, traverseAllPaths);
+                    parseBlock(directPointer, fd, sb, blockSize, path, enumAllPaths);
                 }
             }
         }

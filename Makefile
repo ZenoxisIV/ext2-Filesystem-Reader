@@ -9,11 +9,11 @@
 CC = gcc
 CFLAGS = -Wall -g
 
-SRCS = main.c enum.c read.c pathParser.c error.c
+SRCS = main.c enum.c read.c pathParser.c error.c extract.c
 OBJS = $(SRCS:.c=.o)
 EXEC = ext2op
 
-$(EXEC): $(OBJS)
+$(EXEC): $(OBJS) defs.h
 	$(CC) $(CFLAGS) -o $(EXEC) $(OBJS)
 
 %.o: %.c

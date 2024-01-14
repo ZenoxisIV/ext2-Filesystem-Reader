@@ -97,15 +97,21 @@ typedef struct dir_entry {
 } dir_entry;
 
 // === Function Signatures ===
+
 // read.c
 superblock readSuperblock(int);
 void readBGD(int, blk_groupdesc*, int, int);
 inode readInode(int, int, superblock, int);
 dir_entry readDirEntry(int, __u32, int, int);
 __u16 extractObjectType(inode);
-void parseBlock(__u32, int, superblock, int, char*, void (*traverseFunc)(inode, int, superblock, int, char*));
+// void parseBlock(__u32, int, superblock, int, char*, void (*traverseFunc)(inode, int, superblock, int, char*));
 __u32 readIndirectBlock(int, __u32, int, int);
-void traverseAllPaths(inode, int, superblock, int, char*);
+
+// enum.c
+void enumAllPaths(inode, int, superblock, int, char*);
+
+// extract.c
+int searchForTarget(inode*, int, superblock, int, char*); //! IMPORTANT: function modifies the currInode argument passed to it
 
 // pathParser.c
 void recreatePath(char*);
