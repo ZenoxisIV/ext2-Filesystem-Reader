@@ -28,10 +28,6 @@ void parseBlock2_ext(__u32 blockPointer, int fd, superblock sb, int blockSize, c
         inode nextInode = readInode(directory_entry.inode_num, fd, sb, blockSize);
         __u16 objType = extractObjectType(nextInode);
 
-        // char newPath[MAX_PATH_LENGTH];
-        // strncpy(newPath, path, MAX_PATH_LENGTH);
-        // strncat(newPath, dirName, directory_entry.name_size);
-
         switch (objType) {
             case DIRECTORY:
                 // strncat(newPath, "/", 2);
@@ -218,10 +214,10 @@ int checkBlock(inode* currInode, dir_entry* targetDir, __u32 blockPointer, int f
 
         const char* dirName = ( char*) directory_entry.name;
 
-        if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0) {
-            bytesParsed += directory_entry.size;
-            continue; // Skip current and parent directory entries
-        }
+        // if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0) {
+        //     bytesParsed += directory_entry.size;
+        //     continue; // Skip current and parent directory entries
+        // }
 
         // We found our target
         if (strcmp(dirName, target) == 0) {

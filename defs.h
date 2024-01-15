@@ -116,7 +116,7 @@ int searchForTarget(inode*, dir_entry*, int, superblock, int, char*); //! IMPORT
 
 
 // pathParser.c
-void recreatePath(char*);
+void cleanPath(char*);
 
 // error.c
 bool isAbsolutePath(char*);

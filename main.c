@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
         }
 
         // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
-        recreatePath(path); // clean path for easier search
+        cleanPath(path); // clean path for easier search
 
         rootinode = readInode(2, fd, sb, block_size);
         int targetType;

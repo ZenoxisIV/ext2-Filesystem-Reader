@@ -1,6 +1,6 @@
 #include "defs.h"
 
-void recreatePath(char *path) {
+void cleanPath(char *path) {
     int len = strlen(path);
     bool flag = path[len - 1] == '/';
     

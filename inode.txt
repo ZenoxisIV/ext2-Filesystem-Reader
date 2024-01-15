@@ -1,0 +1,14 @@
+Note that each bitmap described above is one block wide. Following the inode bitmap
+block is a sequence of blocks called the inode table which contains inodes as described
+in the lecture. Each block contains inodes with the size of each inode specified as a
+two-byte integer in byte offsets 88-89 of the superblock.
+Each block group has its own set of inodes. The number of inodes in each block
+group can be found in byte offsets 40-43 of the superblock.
+inodes are distributed among block groups in sequence. Taking note that the first
+inode number is 1 and with a hypothetical value of 100 inodes per block group, inodes
+1-100 can be found in block group 0, inodes 101-200 are in block group 1, and so on and
+so forth.
+The inode itself may be found in memory by locating the starting address of the
+inode table and taking the relative position of the inode in the block group as an index
+into the inode table (e.g., since block group 1 has inodes 101-200 for the above example,
+inode 101 is index 0 in the inode table of block group 1).
