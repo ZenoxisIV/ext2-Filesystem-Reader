@@ -27,6 +27,9 @@
     Note: Use sudo when having permission issues
 */
 
+void printSuperblockInfo(superblock sb, __u32 block_size, __u32 total_block_groups);
+void printBGDInfo(blk_groupdesc* bgdt, int bgdOffset);
+
 int main(int argc, char* argv[]) {
     int fd = open(argv[1], O_RDONLY);
     if (fd == -1) {
@@ -45,19 +48,7 @@ int main(int argc, char* argv[]) {
     __u32 block_size = 1024 << sb.lg_block_size;
     __u32 total_block_groups = ceil(sb.total_blocks / sb.total_blocks_in_blockgroup + 1);
 
-    if (SB_DBG) {
-        printf("    Superblock Number: %d\n", sb.superblock_block_num);
-        printf("    Partition size: %d\n", sb.total_blocks * block_size);
-        printf("    Total # of blocks: %d\n", sb.total_blocks);
-        printf("    Total # of block groups: %d\n", total_block_groups);
-        printf("    Total # of inodes: %d\n", sb.total_inodes);
-
-        printf("    Block size: %d\n", block_size);
-        printf("    # of blocks per block group: %d\n", sb.total_blocks_in_blockgroup); // FSR number is higher than total number of blocks
-        printf("    inode size: %d\n", sb.inode_size);
-        printf("    # of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
-        printf("    # of inode blocks per block group: %d\n", (sb.total_inodes_in_blockgroup / (block_size / sb.inode_size)));
-    }
+    printSuperblockInfo(sb, block_size, total_block_groups);
 
 
     // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
@@ -65,14 +56,7 @@ int main(int argc, char* argv[]) {
     blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
     for (int bgdOffset = 0; bgdOffset < total_block_groups; bgdOffset++) {
         readBGD(fd, bgdt, bgdOffset, block_size);
-
-        if (!BGDT_DBG) continue;
-        printf("\n-----BGD ENTRY %d INFO-----\n", bgdOffset);
-        printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
-        printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
-        printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
-        printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
-        printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
+        printBGDInfo(bgdt, bgdOffset);
     }
 
     inode rootinode;
@@ -136,4 +120,33 @@ int main(int argc, char* argv[]) {
     close(fd);
     free(bgdt);
     return 0;
+}
+
+// DEBUG FUNCTIONS
+
+void printBGDInfo(blk_groupdesc* bgdt, int bgdOffset) {
+    if (!BGDT_DBG) return;
+
+    printf("\n-----BGD ENTRY %d INFO-----\n", bgdOffset);
+    printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
+    printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
+    printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
+    printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
+    printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
+}
+
+void printSuperblockInfo(superblock sb, __u32 block_size, __u32 total_block_groups) {
+    if (!SB_DBG) return;
+
+    printf("    Superblock Number: %d\n", sb.superblock_block_num);
+    printf("    Partition size: %d\n", sb.total_blocks * block_size);
+    printf("    Total # of blocks: %d\n", sb.total_blocks);
+    printf("    Total # of block groups: %d\n", total_block_groups);
+    printf("    Total # of inodes: %d\n", sb.total_inodes);
+
+    printf("    Block size: %d\n", block_size);
+    printf("    # of blocks per block group: %d\n", sb.total_blocks_in_blockgroup); // FSR number is higher than total number of blocks
+    printf("    inode size: %d\n", sb.inode_size);
+    printf("    # of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
+    printf("    # of inode blocks per block group: %d\n", (sb.total_inodes_in_blockgroup / (block_size / sb.inode_size)));
 }

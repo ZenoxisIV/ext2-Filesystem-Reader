@@ -58,7 +58,6 @@ void extractSinglePath(inode currInode, dir_entry targetDir, int fd, superblock 
     char dest[MAX_PATH_LENGTH] = "";
     strcpy(dest, destPath);
     strcat(dest, (char*)targetDir.name);
-    // printf("destination: %s\n", dest);
 
     FILE* fp = fopen(dest, "w");
     
@@ -127,8 +126,6 @@ void extractSinglePath(inode currInode, dir_entry targetDir, int fd, superblock 
 
 // Extracts all the subfiles/directories in a given directory
 void extractAllPaths(inode currInode, dir_entry targetDir, int fd, superblock sb, int blockSize, char* destPath, int isRoot) {
-    // printf("%s\n", srcPath);
-
     char buildPath[MAX_PATH_LENGTH] = "output";
 
     if (!isRoot) {
@@ -136,7 +133,6 @@ void extractAllPaths(inode currInode, dir_entry targetDir, int fd, superblock sb
         strcat(buildPath, (char*)targetDir.name);
     }
 
-    // printf("buildpath: %s\n", buildPath);
     mkdir(buildPath, 0777);
     strcat(buildPath, "/");
 
@@ -213,11 +209,6 @@ int checkBlock(inode* currInode, dir_entry* targetDir, __u32 blockPointer, int f
         directory_entry = readDirEntry(fd, blockPointer, blockSize, bytesParsed);
 
         const char* dirName = ( char*) directory_entry.name;
-
-        // if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0) {
-        //     bytesParsed += directory_entry.size;
-        //     continue; // Skip current and parent directory entries
-        // }
 
         // We found our target
         if (strcmp(dirName, target) == 0) {
