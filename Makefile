@@ -16,7 +16,7 @@ EXEC = ext2op
 $(EXEC): $(OBJS) defs.h
 	$(CC) $(CFLAGS) -o $(EXEC) $(OBJS)
 
-%.o: %.c
+%.o: %.c defs.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
