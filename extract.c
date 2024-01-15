@@ -62,7 +62,7 @@ void extractSinglePath(inode currInode, dir_entry targetDir, int fd, superblock 
     char dest[MAX_PATH_LENGTH] = "";
     strcpy(dest, destPath);
     strcat(dest, (char*)targetDir.name);
-    printf("destination: %s\n", dest);
+    // printf("destination: %s\n", dest);
 
     FILE* fp = fopen(dest, "w");
     
@@ -140,7 +140,7 @@ void extractAllPaths(inode currInode, dir_entry targetDir, int fd, superblock sb
         strcat(buildPath, (char*)targetDir.name);
     }
 
-    printf("buildpath: %s\n", buildPath);
+    // printf("buildpath: %s\n", buildPath);
     mkdir(buildPath, 0777);
     strcat(buildPath, "/");
 
@@ -240,11 +240,10 @@ int checkBlock(inode* currInode, dir_entry* targetDir, __u32 blockPointer, int f
 
 //!     IMPORTANT: function modifies the currInode & targetDir argument passed to it
 int searchForTarget(inode* currInode, dir_entry* targetDir, int fd, superblock sb, int blockSize, char path[]) {
-    int targetIsFile;
+    int targetIsDir = 0;
     
     if (path[strlen(path) - 1] == '/') 
-        targetIsFile = 0; // target is folder
-    else targetIsFile = 1; // target is file
+        targetIsDir = 1; // target is directory
 
     //* 1. Tokenize Path to loop through each directory/file
     // Current token is the target directory/file to be looking for
@@ -332,11 +331,11 @@ targetFound:
 
     switch (objType) {
         case FILE_:
-            if (!targetIsFile) return -1;
+            if (targetIsDir) return -1;
             else return 1;
             break;
         case DIRECTORY:
-            if (targetIsFile) return -1;
+            if (targetIsDir) return 2;
             else return 2;
             break;
         default:
