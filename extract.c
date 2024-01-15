@@ -322,8 +322,7 @@ targetFound:
             else return 1;
             break;
         case DIRECTORY:
-            if (targetIsDir) return 2;
-            else return 2;
+            return 2;
             break;
         default:
             return -1;
