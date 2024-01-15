@@ -13,16 +13,8 @@ void recreatePath(char *path) {
     // Tokenize the input path (Note: similar with split() in Python)
     char *token = strtok(path, "/");
     while (token != NULL) {
-        if (strcmp(token, "..") == 0) {
-            // Move to the parent directory, if possible
-            if (stackIdx > 0) {
-                stackIdx--;
-            }
-        } else if (strcmp(token, ".") != 0 && strlen(token) > 0) {
-            // Skip current directory, and add valid directory names to the stack
-            stack[stackIdx++] = token;
-        }
-
+        // Store valid names, .., and . to the stack
+        if (strlen(token) > 0) stack[stackIdx++] = token;
         token = strtok(NULL, "/");
     }
 
