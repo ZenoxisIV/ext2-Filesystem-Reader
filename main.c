@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
         strcpy(path, "/");
         enumAllPaths(rootinode, fd, sb, block_size, path);  
         // --------------------------------------------------
-    } else if (argc > 2) {
+    } else if (argc >= 3) {
         if (!isAbsolutePath(argv[2])) {
             fprintf(stderr, "INVALID PATH\n");
             close(fd);

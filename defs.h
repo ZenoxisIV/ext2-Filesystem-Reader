@@ -22,7 +22,6 @@
 #define MAX_PATH_LENGTH 4096
 
 // === Structs ===
-// read.c
 // Reference: https://wiki.osdev.org/Ext2 Base Superblock Fields
 typedef struct superblock {
 	__u32 total_inodes;
