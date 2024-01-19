@@ -38,11 +38,22 @@ void readBGD(int fd, blk_groupdesc* bgdt, int bgdOffset, int blockSize) {
 inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
     // ===== Find an inode
     inode currInode;
+    blk_groupdesc bgd;
     //printf("-----INODE %d LOCATION-----\n", inodeNum);
 
-    //int blockGroup = (inodeNum - 1) / sb.total_inodes_in_blockgroup;
+    int blockGroup = (inodeNum - 1) / sb.total_inodes_in_blockgroup;
     int inodeIndex = (inodeNum - 1) % sb.total_inodes_in_blockgroup;
     //int containingBlock = (inodeIndex * sb.inode_size) / blockSize;
+
+    if (lseek(fd, blockSize * 1 + (blockGroup * sizeof(blk_groupdesc)), SEEK_SET) == -1) { ///////// NEED TO GENERALIZE BGDT OFFSET DEPENDING ON BLOCK SIZE ///////
+        perror("[Error] Seeking to BGDT failed");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
+    read(fd, &bgd, sizeof(blk_groupdesc));
+
+    int inodeTableStartBlock = bgd.inode_table;
 
     //printf("    Block group: %d\n", blockGroup);
     //printf("    Index: %d\n", inodeIndex);
@@ -51,7 +62,7 @@ inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
     // ===== Seek to the inode table position (skip 4096 bytes * 4 = 4 blocks) 
     //printf("-----INODE %d INFO-----\n", inodeNum);
 
-    if (lseek(fd, blockSize * 4 + (inodeIndex * sb.inode_size), SEEK_SET) == -1) {
+    if (lseek(fd, blockSize * inodeTableStartBlock + (inodeIndex * sb.inode_size), SEEK_SET) == -1) {
         perror("[Error] Seeking to inode table failed");
         close(fd);
         exit(EXIT_FAILURE);

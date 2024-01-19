@@ -16,7 +16,6 @@ void readDirEntries_enum(__u32 blockPointer, int fd, superblock sb, int blockSiz
 
     int bytesParsed = 0;
     while (bytesParsed < blockSize) {
-
         directory_entry = readDirEntry(fd, blockPointer, blockSize, bytesParsed);
 
         const char* dirName = (char*) directory_entry.name;
@@ -50,7 +49,7 @@ void readDirEntries_enum(__u32 blockPointer, int fd, superblock sb, int blockSiz
                 // printf("Warning: Unknown object found\n");
                 break;
         }
-
+        
         bytesParsed += directory_entry.size;
     }
 }
