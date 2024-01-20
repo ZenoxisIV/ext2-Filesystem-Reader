@@ -99,7 +99,6 @@ typedef struct dir_entry {
 
 // read.c
 superblock readSuperblock(int);
-void readBGD(int, blk_groupdesc*, int, int);
 inode readInode(int, int, superblock, int);
 dir_entry readDirEntry(int, __u32, int, int);
 __u16 extractObjectType(inode);

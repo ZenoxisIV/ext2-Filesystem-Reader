@@ -25,27 +25,20 @@ superblock readSuperblock(int fd) {
     return sb;
 }
 
-void readBGD(int fd, blk_groupdesc* bgdt, int bgdOffset, int blockSize) {
-    if (lseek(fd, blockSize + (bgdOffset * 32), SEEK_SET) == -1) {
-        perror("[Error] Seeking to BGDT failed");
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
-
-    read(fd, &bgdt[bgdOffset], sizeof(blk_groupdesc));
-}
-
 inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
     // ===== Find an inode
     inode currInode;
     blk_groupdesc bgd;
     //printf("-----INODE %d LOCATION-----\n", inodeNum);
 
+    //printf("inum: %d\n", inodeNum);
+
     int blockGroup = (inodeNum - 1) / sb.total_inodes_in_blockgroup;
     int inodeIndex = (inodeNum - 1) % sb.total_inodes_in_blockgroup;
     //int containingBlock = (inodeIndex * sb.inode_size) / blockSize;
 
     if (lseek(fd, blockSize * 1 + (blockGroup * sizeof(blk_groupdesc)), SEEK_SET) == -1) { ///////// NEED TO GENERALIZE BGDT OFFSET DEPENDING ON BLOCK SIZE ///////
+        //printf("%d\n", blockGroup);
         perror("[Error] Seeking to BGDT failed");
         close(fd);
         exit(EXIT_FAILURE);

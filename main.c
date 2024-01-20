@@ -50,15 +50,6 @@ int main(int argc, char* argv[]) {
 
     printSuperblockInfo(sb, block_size, total_block_groups);
 
-
-    // ===== Seek to the Block Group Descriptor Table position (skip 4096 bytes = 1 block)
-    //! Commented BGDT Iteration because it doesn't seem to be needed?
-    blk_groupdesc* bgdt = (blk_groupdesc*) malloc(total_block_groups * sizeof(blk_groupdesc));
-    for (int bgdOffset = 0; bgdOffset < total_block_groups; bgdOffset++) {
-        readBGD(fd, bgdt, bgdOffset, block_size);
-        printBGDInfo(bgdt, bgdOffset);
-    }
-
     inode rootinode;
 
     char path[MAX_PATH_LENGTH];
@@ -80,7 +71,6 @@ int main(int argc, char* argv[]) {
         if (!isAbsolutePath(argv[2])) {
             fprintf(stderr, "INVALID PATH\n");
             close(fd);
-            free(bgdt);
             return -1;
         }
 
@@ -101,7 +91,6 @@ int main(int argc, char* argv[]) {
         if ((targetType = searchForTarget(&rootinode, &targetDir, fd, sb, block_size, path)) == -1) {
             fprintf(stderr, "INVALID PATH\n");
             close(fd);
-            free(bgdt);
             return -1;
 
         } else if (targetType == 1) {
@@ -118,7 +107,6 @@ int main(int argc, char* argv[]) {
     }
 
     close(fd);
-    free(bgdt);
     return 0;
 }
 
