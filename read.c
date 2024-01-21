@@ -14,7 +14,6 @@
 superblock readSuperblock(int fd) {
     superblock sb;
     // ===== Seek to the superblock position (skip 1024 bytes)
-    //printf("-----SUPERBLOCK INFO-----\n");
     if (lseek(fd, SUPERBLOCK_OFFSET, SEEK_SET) == -1) {
         perror("[Error] Seeking to superblock failed");
         close(fd);
@@ -25,40 +24,32 @@ superblock readSuperblock(int fd) {
     return sb;
 }
 
-inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
-    // ===== Find an inode
-    inode currInode;
+blk_groupdesc readBGD(int fd, int blockSize, int blockGroup) {
     blk_groupdesc bgd;
-    // printf("-----INODE %d LOCATION-----\n", inodeNum);
 
-    int blockGroup = (inodeNum - 1) / sb.total_inodes_in_blockgroup;
-    int inodeIndex = (inodeNum - 1) % sb.total_inodes_in_blockgroup;
-    // int containingBlock = (inodeIndex * sb.inode_size) / blockSize;
+    int bgdtOffset = blockGroup * sizeof(blk_groupdesc);
+    const int bgdtLoc = blockSize == 1024 ? 2 : 1;
 
-   if (blockSize == 1024) {
-    if (lseek(fd, blockSize * 2 + (blockGroup * sizeof(blk_groupdesc)), SEEK_SET) == -1) {
+    if (lseek(fd, blockSize * bgdtLoc + bgdtOffset, SEEK_SET) == -1) {
         perror("[Error] Seeking to BGDT failed");
         close(fd);
         exit(EXIT_FAILURE);
     }
-   } else {
-    if (lseek(fd, blockSize * 1 + (blockGroup * sizeof(blk_groupdesc)), SEEK_SET) == -1) {
-        perror("[Error] Seeking to BGDT failed");
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
-   }
 
     read(fd, &bgd, sizeof(blk_groupdesc));
 
+    return bgd;
+}
+
+inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
+    // ===== Find an inode
+    inode currInode;
+    
+    int blockGroup = (inodeNum - 1) / sb.total_inodes_in_blockgroup;
+    int inodeIndex = (inodeNum - 1) % sb.total_inodes_in_blockgroup;
+
+    blk_groupdesc bgd = readBGD(fd, blockSize, blockGroup);
     int inodeTableStartBlock = bgd.inode_table;
-
-    // printf("    Block group: %d\n", blockGroup);
-    // printf("    Index: %d\n", inodeIndex);
-    // printf("    Containing block: %d\n", containingBlock);
-
-    // ===== Seek to the inode table position (skip 4096 bytes * 4 = 4 blocks) 
-    // printf("-----INODE %d INFO-----\n", inodeNum);
 
     if (lseek(fd, blockSize * inodeTableStartBlock + (inodeIndex * sb.inode_size), SEEK_SET) == -1) {
         perror("[Error] Seeking to inode table failed");
@@ -67,13 +58,6 @@ inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
     }
 
     read(fd, &currInode, sizeof(currInode));
-
-
-    // printf("    Type and permissions: %x\n", currInode.type_and_perm);
-    // printf("    File size (lo): %d\n", currInode.lo_size);
-    // for (int i = 1; i <= 12; i++){
-    //     printf("    Direct Pointer %d: %d\n", i, currInode.dp[i-1]);
-    // }
 
     return currInode;
 }
@@ -87,9 +71,6 @@ dir_entry readDirEntry(int fd, __u32 dp, int blockSize, int bytesParsed) {
         exit(EXIT_FAILURE);
     }
 
-    // ===== Read data block(s) pointed to by the direct pointer(s)
-    // NOTE: Code below only for one direct pointer (from root inode which only has one pointer)
-    //printf("-----DATA BLOCK %d-----\n", inode.dp[0]);
     read(fd, &entry, sizeof(dir_entry));
 
     return entry;

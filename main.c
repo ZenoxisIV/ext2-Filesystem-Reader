@@ -7,13 +7,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
-#include <math.h>
 #include "defs.h"
-
-// Debug Lines. Set these to 1 depending on what you want to display
-#define SB_DBG      0   // Superblock
-#define BGDT_DBG    0   // Block Group Descriptor Table
-
 
 /*
     EXT2 SUPERBLOCK PARSER
@@ -26,9 +20,6 @@
 
     Note: Use sudo when having permission issues
 */
-
-void printSuperblockInfo(superblock sb, __u32 block_size, __u32 total_block_groups);
-void printBGDInfo(blk_groupdesc* bgdt, int bgdOffset);
 
 int main(int argc, char* argv[]) {
     int fd = open(argv[1], O_RDONLY);
@@ -46,22 +37,14 @@ int main(int argc, char* argv[]) {
     }
 
     __u32 block_size = 1024 << sb.lg_block_size;
-    __u32 total_block_groups = ceil(sb.total_blocks / sb.total_blocks_in_blockgroup + 1);
-
-    printSuperblockInfo(sb, block_size, total_block_groups);
+    //__u32 total_block_groups = (__u32) ceiling(((double) sb.total_blocks) / sb.total_blocks_in_blockgroup);
 
     inode rootInode;
 
     char path[MAX_PATH_LENGTH];
     
-
     if (argc == 2) {
-        // **OP 1: PATH ENUMERATION       (No additional arguments)
-        //! BGDT TRAVERSAL USED TO BE HERE.
-        // IF anything fails, try putting the BGDT traversal loop back here and then
-        //     put traverseAllPaths() inside the loop
-
-        // ===== Find an inode
+        // **OP 1: PATH ENUMERATION (No additional arguments)
         rootInode = readInode(2, fd, sb, block_size); // read root inode
         
         strcpy(path, "/");
@@ -81,8 +64,8 @@ int main(int argc, char* argv[]) {
             strcat(path, argv[i]);
         }
 
-        // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
-        cleanPath(path); // clean path for easier search
+        // **OP 2: FILESYSTEM EXTRACTION (Additional argument given)
+        cleanPath(path); // remove redundant forward slashes in path
 
         rootInode = readInode(2, fd, sb, block_size);
         int targetType;
@@ -105,33 +88,4 @@ int main(int argc, char* argv[]) {
 
     close(fd);
     return 0;
-}
-
-// DEBUG FUNCTIONS
-
-void printBGDInfo(blk_groupdesc* bgdt, int bgdOffset) {
-    if (!BGDT_DBG) return;
-
-    printf("\n-----BGD ENTRY %d INFO-----\n", bgdOffset);
-    printf("    Block bitmap block address: %d\n", bgdt[bgdOffset].block_bitmap);
-    printf("    inode bitmap block address: %d\n", bgdt[bgdOffset].inode_bitmap);
-    printf("    inode table starting block address: %d\n", bgdt[bgdOffset].inode_table);
-    printf("    Unallocated blocks: %d\n", bgdt[bgdOffset].total_unallocated_blocks);
-    printf("    Total directories: %d\n", bgdt[bgdOffset].total_dirs);
-}
-
-void printSuperblockInfo(superblock sb, __u32 block_size, __u32 total_block_groups) {
-    if (!SB_DBG) return;
-
-    printf("    Superblock Number: %d\n", sb.superblock_block_num);
-    printf("    Partition size: %d\n", sb.total_blocks * block_size);
-    printf("    Total # of blocks: %d\n", sb.total_blocks);
-    printf("    Total # of block groups: %d\n", total_block_groups);
-    printf("    Total # of inodes: %d\n", sb.total_inodes);
-
-    printf("    Block size: %d\n", block_size);
-    printf("    # of blocks per block group: %d\n", sb.total_blocks_in_blockgroup); // FSR number is higher than total number of blocks
-    printf("    inode size: %d\n", sb.inode_size);
-    printf("    # of inodes per block group: %d\n", sb.total_inodes_in_blockgroup);
-    printf("    # of inode blocks per block group: %d\n", (sb.total_inodes_in_blockgroup / (block_size / sb.inode_size)));
 }

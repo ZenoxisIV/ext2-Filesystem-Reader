@@ -34,7 +34,7 @@ int enumDirEntries(__u32 blockPointer, int fd, superblock sb, int blockSize) {
 
         switch (objType) {
             case DIRECTORY:
-                strncat(OUTPUT_PATH, "/", 2);
+                strcat(OUTPUT_PATH, "/");
                 enumDirectory(nextInode, fd, sb, blockSize);
                 break;
             case FILE_:

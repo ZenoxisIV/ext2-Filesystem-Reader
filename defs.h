@@ -30,7 +30,7 @@ typedef struct superblock {
 	__u32 total_unallocated_blocks;
 	__u32 total_unallocated_inodes;
 	__u32 superblock_block_num;
-	__u32 lg_block_size; // (not actual block size) block size is computed as 1024 shifted to the left by lg_block_size bits
+	__u32 lg_block_size; // Note: log value
 	__u32 lg_fragment_size;
 	__u32 total_blocks_in_blockgroup;
 	__u32 total_fragments_in_blockgroup;
@@ -92,13 +92,13 @@ typedef struct dir_entry {
 	__u16 size;
 	__u8  name_size;
 	__u8  ignored;
-	__u8  name[256]; // MAY NEED TO CHANGE
+	__u8  name[256];
 } dir_entry;
 
 // === Function Signatures ===
-
 // read.c
 superblock readSuperblock(int);
+blk_groupdesc readBGD(int, int, int);
 inode readInode(int, int, superblock, int);
 dir_entry readDirEntry(int, __u32, int, int);
 __u16 extractObjectType(inode);
@@ -112,7 +112,6 @@ void enumDirectory(inode, int, superblock, int);
 void extractFile(inode, int, superblock, int, int);
 void extractDir(inode, int, superblock, int, int);
 int searchForTarget(inode, int, superblock, int, char*);
-
 
 // pathParser.c
 void cleanPath(char*);

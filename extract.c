@@ -65,7 +65,7 @@ void extractDir(inode currInode, int fd, superblock sb, int blockSize, int isRoo
         currInode = TARGET_INODE;
         strcpy(DEST_PATH, "output");
     } else
-        strcat(DEST_PATH, (char*)TARGET_DIR.name);
+        strncat(DEST_PATH, (char*)TARGET_DIR.name, TARGET_DIR.name_size); // We ensure that we don't copy extraneous characters.
 
     mkdir(DEST_PATH, 0777);
     strcat(DEST_PATH, "/");
@@ -113,7 +113,7 @@ int checkEntries(__u32 blockPointer, int fd, superblock sb, int blockSize){
     while (bytesParsed < blockSize) {
         directory_entry = readDirEntry(fd, blockPointer, blockSize, bytesParsed);
 
-        const char* dirName = ( char*) directory_entry.name;
+        const char* dirName = (char*) directory_entry.name;
 
         // We found our target
         if (strcmp(dirName, TARGET_NAME) == 0) {
