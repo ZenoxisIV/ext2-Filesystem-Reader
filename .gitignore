@@ -3,3 +3,4 @@ checker
 *.ext2
 testfs10
 testfs20
+output/
