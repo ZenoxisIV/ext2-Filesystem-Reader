@@ -86,9 +86,9 @@ int main(int argc, char* argv[]) {
 
         rootinode = readInode(2, fd, sb, block_size);
         int targetType;
-        dir_entry targetDir;
+        // dir_entry targetDir;
         
-        if ((targetType = searchForTarget(&rootinode, &targetDir, fd, sb, block_size, path)) == -1) {
+        if ((targetType = searchForTarget(&rootinode, fd, sb, block_size, path)) == -1) {
             fprintf(stderr, "INVALID PATH\n");
             close(fd);
             return -1;
@@ -96,12 +96,12 @@ int main(int argc, char* argv[]) {
         } else if (targetType == 1) {
             //* Target was found successfully and is a File
             //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
-            extractSinglePath(rootinode, targetDir, fd, sb, block_size, "");
+            extractSinglePath(rootinode, fd, sb, block_size);
 
         } else if (targetType == 2) {
             //* Target was found successfully and is a Directory
             //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
-            extractAllPaths(rootinode, targetDir, fd, sb, block_size, "", 1);
+            // extractAllPaths(rootinode, targetDir, fd, sb, block_size, "", 1);
         }
         // --------------------------------------------------
     }

@@ -109,9 +109,9 @@ __u32 readIndirectBlock(int, __u32, int, int);
 void enumDirectory(inode, int, superblock, int);
 
 // extract.c
-void extractSinglePath(inode, dir_entry, int, superblock, int, char*);
+void extractSinglePath(inode, int, superblock, int);
 void extractAllPaths(inode, dir_entry, int, superblock, int, char*, int);
-int searchForTarget(inode*, dir_entry*, int, superblock, int, char*); //! IMPORTANT: function modifies the currInode argument passed to it
+int searchForTarget(inode*, int, superblock, int, char*); //! IMPORTANT: function modifies the currInode argument passed to it
 
 
 // pathParser.c
