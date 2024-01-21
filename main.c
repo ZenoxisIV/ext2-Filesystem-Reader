@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
 
     printSuperblockInfo(sb, block_size, total_block_groups);
 
-    inode rootinode;
+    inode rootInode;
 
     char path[MAX_PATH_LENGTH];
     
@@ -62,10 +62,10 @@ int main(int argc, char* argv[]) {
         //     put traverseAllPaths() inside the loop
 
         // ===== Find an inode
-        rootinode = readInode(2, fd, sb, block_size); // read root inode
+        rootInode = readInode(2, fd, sb, block_size); // read root inode
         
         strcpy(path, "/");
-        enumDirectory(rootinode, fd, sb, block_size);  
+        enumDirectory(rootInode, fd, sb, block_size);  
         // --------------------------------------------------
     } else if (argc >= 3) {
         if (!isAbsolutePath(argv[2])) {
@@ -83,25 +83,22 @@ int main(int argc, char* argv[]) {
 
         // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
         cleanPath(path); // clean path for easier search
-        
-        rootinode = readInode(2, fd, sb, block_size);
+
+        rootInode = readInode(2, fd, sb, block_size);
         int targetType;
-        // dir_entry targetDir;
         
-        if ((targetType = searchForTarget(&rootinode, fd, sb, block_size, path)) == -1) {
+        if ((targetType = searchForTarget(rootInode, fd, sb, block_size, path)) == -1) {
             fprintf(stderr, "INVALID PATH\n");
             close(fd);
             return -1;
 
         } else if (targetType == 1) {
             //* Target was found successfully and is a File
-            //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
-            extractSinglePath(rootinode, fd, sb, block_size);
+            extractFile(rootInode, fd, sb, block_size, 1);
 
         } else if (targetType == 2) {
             //* Target was found successfully and is a Directory
-            //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
-            extractAllPaths(rootinode, fd, sb, block_size, 1);
+            extractDir(rootInode, fd, sb, block_size, 1);
         }
         // --------------------------------------------------
     }

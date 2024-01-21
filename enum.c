@@ -12,7 +12,7 @@
 // Instead of passing the output path recursively through function calls, we mutate a single global path
 char OUTPUT_PATH[MAX_PATH_LENGTH] = "/";
 
-void enumDirEntries(__u32 blockPointer, int fd, superblock sb, int blockSize) {
+int enumDirEntries(__u32 blockPointer, int fd, superblock sb, int blockSize) {
     // "Directory entries are also not allowed to span multiple blocks" https://wiki.osdev.org/Ext2#Directory_Entry 
     int bytesParsed = 0;
 
@@ -47,6 +47,8 @@ void enumDirEntries(__u32 blockPointer, int fd, superblock sb, int blockSize) {
         OUTPUT_PATH[oldLen] = '\0'; // After directory/file has been completely traversed, we need to be able to "move out" of the path
         bytesParsed += dirEntry.size;
     }
+
+    return 0;
 }
 
 void enumDirectory(inode currInode, int fd, superblock sb, int blockSize) {

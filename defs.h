@@ -102,16 +102,16 @@ superblock readSuperblock(int);
 inode readInode(int, int, superblock, int);
 dir_entry readDirEntry(int, __u32, int, int);
 __u16 extractObjectType(inode);
-void readPointers(inode, int, superblock, int, void(__u32, int, superblock, int));
+int readPointers(inode, int, superblock, int, int(__u32, int, superblock, int));
 __u32 readIndirectBlock(int, __u32, int, int);
 
 // enum.c
 void enumDirectory(inode, int, superblock, int);
 
 // extract.c
-void extractSinglePath(inode, int, superblock, int);
-void extractAllPaths(inode, int, superblock, int, int);
-int searchForTarget(inode*, int, superblock, int, char*); //! IMPORTANT: function modifies the currInode argument passed to it
+void extractFile(inode, int, superblock, int, int);
+void extractDir(inode, int, superblock, int, int);
+int searchForTarget(inode, int, superblock, int, char*);
 
 
 // pathParser.c

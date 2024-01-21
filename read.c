@@ -113,13 +113,16 @@ __u32 readIndirectBlock(int fd, __u32 blockPointer, int blockSize, int blockOffs
     return retPointer;
 }
 
-void readPointers(inode currInode, int fd, superblock sb, int blockSize, void(blockAction)(__u32, int, superblock, int)) {
+int readPointers(inode currInode, int fd, superblock sb, int blockSize, int(blockAction)(__u32, int, superblock, int)) {
+    int ret; // If the blockAction returns a value != 0, then readPointers returns that ret value
+
     // === Direct
     for (int i = 0; i < NDIRECT; i++){
         if (currInode.dp[i] == 0) continue; // Don't even bother with null pointers
         
-        blockAction(currInode.dp[i], fd, sb, blockSize);
-        // readDirEntries_enum(currInode.dp[i], fd, sb, blockSize, path);
+        if ((ret = blockAction(currInode.dp[i], fd, sb, blockSize)) != 0) {
+            return ret;
+        }
     }
 
     __u32 nindirect = blockSize / sizeof(__u32);
@@ -131,8 +134,9 @@ void readPointers(inode currInode, int fd, superblock sb, int blockSize, void(bl
 
             if (directPointer == 0) continue; // Don't even bother with null pointers
 
-            blockAction(directPointer, fd, sb, blockSize);
-            // readDirEntries_enum(directPointer, fd, sb, blockSize, path);
+            if ((ret = blockAction(directPointer, fd, sb, blockSize)) != 0) {
+                return ret;
+            }
         }
     }
 
@@ -148,8 +152,9 @@ void readPointers(inode currInode, int fd, superblock sb, int blockSize, void(bl
 
                 if (directPointer == 0) continue; // Don't even bother with null pointers
 
-                blockAction(directPointer, fd, sb, blockSize);
-                // readDirEntries_enum(directPointer, fd, sb, blockSize, path);
+                if ((ret = blockAction(directPointer, fd, sb, blockSize)) != 0) {
+                    return ret;
+                }
             }
         }
     }
@@ -171,10 +176,13 @@ void readPointers(inode currInode, int fd, superblock sb, int blockSize, void(bl
 
                     if (directPointer == 0) continue; // Don't even bother with null pointers
 
-                    blockAction(directPointer, fd, sb, blockSize);
-                    // readDirEntries_enum(directPointer, fd, sb, blockSize, path);
+                    if ((ret = blockAction(directPointer, fd, sb, blockSize)) != 0) {
+                        return ret;
+                    }
                 }
             }
         }
     }
+
+    return 0;
 }
