@@ -20,7 +20,7 @@ void parseBlock2_ext(__u32 blockPointer, int fd, superblock sb, int blockSize, c
 
         const char* dirName = (char*) directory_entry.name;
         
-        if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0) {
+        if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0 || directory_entry.inode_num == 0) {
             bytesParsed += directory_entry.size;
             continue; // Skip current and parent directory entries
         }

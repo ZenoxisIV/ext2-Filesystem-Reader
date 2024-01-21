@@ -1,1 +1,5 @@
 *.o
+checker
+*.ext2
+testfs10
+testfs20
