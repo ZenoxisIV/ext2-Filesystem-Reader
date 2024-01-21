@@ -32,5 +32,5 @@ void cleanPath(char *path) {
         temp[tempIdx] = '\0';
     }
 
-    strcpy(path, temp);
+    strncpy(path, temp, strlen(temp));
 }

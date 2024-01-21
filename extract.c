@@ -63,12 +63,12 @@ int extDirEntries(__u32 blockPointer, int fd, superblock sb, int blockSize) {
 void extractDir(inode currInode, int fd, superblock sb, int blockSize, int isRoot) {
     if (isRoot) {
         currInode = TARGET_INODE;
-        strcpy(DEST_PATH, "output");
+        strncpy(DEST_PATH, "output", 7);
     } else
         strncat(DEST_PATH, (char*)TARGET_DIR.name, TARGET_DIR.name_size); // We ensure that we don't copy extraneous characters.
 
     mkdir(DEST_PATH, 0777);
-    strcat(DEST_PATH, "/");
+    strncat(DEST_PATH, "/", 2);
 
     readPointers(currInode, fd, sb, blockSize, extDirEntries);
 }
@@ -90,7 +90,7 @@ void extractFile(inode currInode, int fd, superblock sb, int blockSize, int isRo
     if (isRoot) currInode = TARGET_INODE;
 
     int oldLen = strlen(DEST_PATH);
-    strcat(DEST_PATH, (char*)TARGET_DIR.name);
+    strncat(DEST_PATH, (char*)TARGET_DIR.name, TARGET_DIR.name_size);
 
     FILE_PT = fopen(DEST_PATH, "w");
 

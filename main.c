@@ -60,8 +60,8 @@ int main(int argc, char* argv[]) {
         strcpy(path, argv[2]);
 
         for (int i = 3; i < argc; i++) {
-            strcat(path, " ");
-            strcat(path, argv[i]);
+            strncat(path, " ", 2);
+            strncat(path, argv[i], strlen(argv[i]));
         }
 
         // **OP 2: FILESYSTEM EXTRACTION (Additional argument given)
