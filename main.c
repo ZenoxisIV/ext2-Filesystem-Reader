@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
 
         // **OP 2: FILESYSTEM EXTRACTION  (Additional argument given)
         cleanPath(path); // clean path for easier search
-
+        
         rootinode = readInode(2, fd, sb, block_size);
         int targetType;
         // dir_entry targetDir;
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
         } else if (targetType == 2) {
             //* Target was found successfully and is a Directory
             //! IMPORTANT: searchForTarget modifies the currInode & targetDir argument passed to it
-            // extractAllPaths(rootinode, targetDir, fd, sb, block_size, "", 1);
+            extractAllPaths(rootinode, fd, sb, block_size, 1);
         }
         // --------------------------------------------------
     }

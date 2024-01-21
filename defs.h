@@ -110,7 +110,7 @@ void enumDirectory(inode, int, superblock, int);
 
 // extract.c
 void extractSinglePath(inode, int, superblock, int);
-void extractAllPaths(inode, dir_entry, int, superblock, int, char*, int);
+void extractAllPaths(inode, int, superblock, int, int);
 int searchForTarget(inode*, int, superblock, int, char*); //! IMPORTANT: function modifies the currInode argument passed to it
 
 

@@ -29,11 +29,11 @@ inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
     // ===== Find an inode
     inode currInode;
     blk_groupdesc bgd;
-    //printf("-----INODE %d LOCATION-----\n", inodeNum);
+    // printf("-----INODE %d LOCATION-----\n", inodeNum);
 
     int blockGroup = (inodeNum - 1) / sb.total_inodes_in_blockgroup;
     int inodeIndex = (inodeNum - 1) % sb.total_inodes_in_blockgroup;
-    //int containingBlock = (inodeIndex * sb.inode_size) / blockSize;
+    // int containingBlock = (inodeIndex * sb.inode_size) / blockSize;
 
    if (blockSize == 1024) {
     if (lseek(fd, blockSize * 2 + (blockGroup * sizeof(blk_groupdesc)), SEEK_SET) == -1) {
@@ -53,12 +53,12 @@ inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
 
     int inodeTableStartBlock = bgd.inode_table;
 
-    //printf("    Block group: %d\n", blockGroup);
-    //printf("    Index: %d\n", inodeIndex);
-    //printf("    Containing block: %d\n", containingBlock);
+    // printf("    Block group: %d\n", blockGroup);
+    // printf("    Index: %d\n", inodeIndex);
+    // printf("    Containing block: %d\n", containingBlock);
 
     // ===== Seek to the inode table position (skip 4096 bytes * 4 = 4 blocks) 
-    //printf("-----INODE %d INFO-----\n", inodeNum);
+    // printf("-----INODE %d INFO-----\n", inodeNum);
 
     if (lseek(fd, blockSize * inodeTableStartBlock + (inodeIndex * sb.inode_size), SEEK_SET) == -1) {
         perror("[Error] Seeking to inode table failed");
@@ -68,13 +68,12 @@ inode readInode(int inodeNum, int fd, superblock sb, int blockSize) {
 
     read(fd, &currInode, sizeof(currInode));
 
-    /*
-    printf("    Type and permissions: %x\n", inode.type_and_perm);
-    printf("    File size (lo): %d\n", inode.lo_size);
-    for (int i = 1; i <= 12; i++){
-        printf("    Direct Pointer %d: %d\n", i, inode.dp[i-1]);
-    }
-    */
+
+    // printf("    Type and permissions: %x\n", currInode.type_and_perm);
+    // printf("    File size (lo): %d\n", currInode.lo_size);
+    // for (int i = 1; i <= 12; i++){
+    //     printf("    Direct Pointer %d: %d\n", i, currInode.dp[i-1]);
+    // }
 
     return currInode;
 }

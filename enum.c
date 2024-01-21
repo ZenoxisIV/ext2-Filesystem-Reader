@@ -17,26 +17,24 @@ void enumDirEntries(__u32 blockPointer, int fd, superblock sb, int blockSize) {
     int bytesParsed = 0;
 
     while (bytesParsed < blockSize) {
-        dir_entry directory_entry = readDirEntry(fd, blockPointer, blockSize, bytesParsed);
-        const char* dirName = (char*) directory_entry.name;
+        dir_entry dirEntry = readDirEntry(fd, blockPointer, blockSize, bytesParsed);
+        const char* dirName = (char*) dirEntry.name;
         
         // Skip current & parent directories, and skip null inodes
-        if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0 || directory_entry.inode_num == 0) {
-            bytesParsed += directory_entry.size;
+        if (strcmp(dirName, ".") == 0 || strcmp(dirName, "..") == 0 || dirEntry.inode_num == 0) {
+            bytesParsed += dirEntry.size;
             continue; 
         }
 
-        inode nextInode = readInode(directory_entry.inode_num, fd, sb, blockSize);
+        inode nextInode = readInode(dirEntry.inode_num, fd, sb, blockSize);
         __u16 objType = extractObjectType(nextInode);
 
         int oldLen = strlen(OUTPUT_PATH);
-        strncat(OUTPUT_PATH, dirName, directory_entry.name_size);
+        strncat(OUTPUT_PATH, dirName, dirEntry.name_size);
 
         switch (objType) {
             case DIRECTORY:
                 strncat(OUTPUT_PATH, "/", 2);
-                printf("%s\n", OUTPUT_PATH);
-
                 enumDirectory(nextInode, fd, sb, blockSize);
                 break;
             case FILE_:
@@ -47,10 +45,11 @@ void enumDirEntries(__u32 blockPointer, int fd, superblock sb, int blockSize) {
         }
 
         OUTPUT_PATH[oldLen] = '\0'; // After directory/file has been completely traversed, we need to be able to "move out" of the path
-        bytesParsed += directory_entry.size;
+        bytesParsed += dirEntry.size;
     }
 }
 
 void enumDirectory(inode currInode, int fd, superblock sb, int blockSize) {
+    printf("%s\n", OUTPUT_PATH);
     readPointers(currInode, fd, sb, blockSize, enumDirEntries);
 }   
