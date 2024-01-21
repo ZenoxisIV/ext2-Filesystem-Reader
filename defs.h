@@ -102,11 +102,11 @@ superblock readSuperblock(int);
 inode readInode(int, int, superblock, int);
 dir_entry readDirEntry(int, __u32, int, int);
 __u16 extractObjectType(inode);
-// void parseBlock(__u32, int, superblock, int, char*, void (*traverseFunc)(inode, int, superblock, int, char*));
+void readPointers(inode, int, superblock, int, void(__u32, int, superblock, int));
 __u32 readIndirectBlock(int, __u32, int, int);
 
 // enum.c
-void enumAllPaths(inode, int, superblock, int, char*);
+void enumDirectory(inode, int, superblock, int);
 
 // extract.c
 void extractSinglePath(inode, dir_entry, int, superblock, int, char*);

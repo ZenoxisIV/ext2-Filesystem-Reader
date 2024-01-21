@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
         rootinode = readInode(2, fd, sb, block_size); // read root inode
         
         strcpy(path, "/");
-        enumAllPaths(rootinode, fd, sb, block_size, path);  
+        enumDirectory(rootinode, fd, sb, block_size);  
         // --------------------------------------------------
     } else if (argc >= 3) {
         if (!isAbsolutePath(argv[2])) {

@@ -113,3 +113,69 @@ __u32 readIndirectBlock(int fd, __u32 blockPointer, int blockSize, int blockOffs
 
     return retPointer;
 }
+
+void readPointers(inode currInode, int fd, superblock sb, int blockSize, void(blockAction)(__u32, int, superblock, int)) {
+    // === Direct
+    for (int i = 0; i < NDIRECT; i++){
+        if (currInode.dp[i] == 0) continue; // Don't even bother with null pointers
+        
+        blockAction(currInode.dp[i], fd, sb, blockSize);
+        // readDirEntries_enum(currInode.dp[i], fd, sb, blockSize, path);
+    }
+
+    __u32 nindirect = blockSize / sizeof(__u32);
+
+    // === Single Indirect
+    if (currInode.sip != 0) { 
+        for (int j = 0; j < nindirect; j++){
+            __u32 directPointer = readIndirectBlock(fd, currInode.sip, blockSize, j*4); // DP points to block with more directory entries
+
+            if (directPointer == 0) continue; // Don't even bother with null pointers
+
+            blockAction(directPointer, fd, sb, blockSize);
+            // readDirEntries_enum(directPointer, fd, sb, blockSize, path);
+        }
+    }
+
+    // === Double Indirect
+    if (currInode.dip != 0) {
+        for (int j = 0; j < nindirect; j++){
+            __u32 singleIP = readIndirectBlock(fd, currInode.dip, blockSize, j*4); // IP points to block with more DPs
+
+            if (singleIP == 0) continue; // Don't even bother with null pointers
+
+            for (int k = 0; k < nindirect; k++){
+                __u32 directPointer = readIndirectBlock(fd, singleIP, blockSize, k*4); // DP points to block with more dir entries
+
+                if (directPointer == 0) continue; // Don't even bother with null pointers
+
+                blockAction(directPointer, fd, sb, blockSize);
+                // readDirEntries_enum(directPointer, fd, sb, blockSize, path);
+            }
+        }
+    }
+
+    // === Triple Indirect
+    if (currInode.tip != 0) {
+        for (int j = 0; j < nindirect; j++){
+            __u32 doubleIP = readIndirectBlock(fd, currInode.tip, blockSize, j*4); // IP points to block with more IPs
+
+            if (doubleIP == 0) continue; // Don't even bother with null pointers
+
+            for (int k = 0; k < nindirect; k++){
+                __u32 singleIP = readIndirectBlock(fd, doubleIP, blockSize, k*4); // IP points to block with even more IPs
+
+                if (singleIP == 0) continue; // Don't even bother with null pointers
+
+                for (int l = 0; l < nindirect; l++){
+                    __u32 directPointer = readIndirectBlock(fd, singleIP, blockSize, l*4); // IP points to block with even more dir entries
+
+                    if (directPointer == 0) continue; // Don't even bother with null pointers
+
+                    blockAction(directPointer, fd, sb, blockSize);
+                    // readDirEntries_enum(directPointer, fd, sb, blockSize, path);
+                }
+            }
+        }
+    }
+}
