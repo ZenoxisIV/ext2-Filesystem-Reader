@@ -10,7 +10,7 @@
 #include "defs.h"
 
 /*
-    EXT2 SUPERBLOCK PARSER
+    ext2 Filesystem Reader
     LITTLE ENDIAN SYSTEM
 
     Boot Block (1024 bytes) -> Block Group 1 -> ... -> Block Group N
