@@ -1,4 +1,4 @@
-# ext2 Filesystem Reader README
+# ext2 Filesystem Reader
 
 ## How to Run the Program
 
@@ -23,5 +23,10 @@ To clean outdated make files, use the following command in the terminal inside o
 ```bash
 make clean
 ```
+
+## Contributors
+* Ivan Cassidy Cadiang
+* Diego Montenejo
+* Rohan Solas
 
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/xLLPVuqj)
